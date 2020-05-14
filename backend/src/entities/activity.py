@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from sqlalchemy import Column, String, Date, ARRAY, Integer, re
+from sqlalchemy import Column, String, Date, ARRAY, Integer
 from marshmallow import Schema, fields
 from sqlalchemy.orm import relationship
 
