@@ -16,7 +16,7 @@ class Country(Entity, Base):
         self.name = name
 
 
-class RegionSchema(Schema):
+class CountrySchema(Schema):
     id = fields.Number()
     name = fields.String()
     created_at = fields.DateTime()
