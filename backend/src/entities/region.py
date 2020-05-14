@@ -11,7 +11,7 @@ class Region(Entity, Base):
     __tablename__ = 'regions'
 
     name = Column(String)
-    country = relationship(foreignkeys='countries.id')
+    country = relationship('country_id', foreign_keys='countries.id')
 
     def __init__(self, name, country, created_by):
         Entity.__init__(self, created_by)
