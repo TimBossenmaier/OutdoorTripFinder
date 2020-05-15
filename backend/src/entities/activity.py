@@ -1,8 +1,9 @@
 # coding=utf-8
 
-from sqlalchemy import Column, String, Date, ARRAY, Integer
+from sqlalchemy import Column, String,Text
 from marshmallow import Schema, fields
 from sqlalchemy.orm import relationship
+from backend.src.entities.location_activity import LocationActivity
 
 from .entity import Entity, Base
 
@@ -10,24 +11,28 @@ from .entity import Entity, Base
 class Activity(Entity, Base):
     __tablename__ = 'activities'
 
-    locations = relationship(uselist=True, backref='activities')
-    activity_type = Column(String)
-    origin = Column(String)
-    save_path = Column(String)
+    name = Column(String, nullable=False)
+    locations = relationship('LocationActivity', uselist=True, backref='activities')
+    description = Column(Text)
+    activity_type = Column(String, nullable=False)
+    source = Column(String, nullable=False)
+    save_path = Column(String, nullable=False)
 
-    def __init__(self, locations, activity_type, origin, save_path, created_by):
-        Entity.__init__(self, created_by)
-        self.locations = locations
+    def __init__(self, name, description, activity_type, source, save_path, created_by):
+        Entity.__int__(self, created_by)
+        self.name = name
+        self.description = description
         self.activity_type = activity_type
-        self.origin = origin
+        self.source = source
         self.save_path = save_path
 
 
 class ActivitySchema(Schema):
     id = fields.Number()
-    locations = fields.Integer()
+    name = fields.String()
+    description = fields.String()
     activity_type = fields.String()
-    origin = fields.String()
+    source = fields.String()
     save_path = fields.String()
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
