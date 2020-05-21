@@ -14,17 +14,14 @@ class Location(Entity, Base):
     long = Column(Float, nullable=False)
     name = Column(String, nullable=False)
     region_id = Column(Integer, ForeignKey('regions.id'), nullable=False)
-    country_id = Column(Integer, ForeignKey('countries.id'), nullable=False)
     region = relationship('Region', foreign_keys=region_id)
-    country = relationship('Country', foreign_keys=country_id)
 
-    def __init__(self, lat, long, name, region_id, country_id, created_by):
+    def __init__(self, lat, long, name, region_id, created_by):
         Entity.__int__(self, created_by)
         self.lat = lat
         self.long = long
         self.name = name
         self.region_id = region_id
-        self.country_id = country_id
 
 
 class LocationSchema(Schema):
@@ -33,7 +30,6 @@ class LocationSchema(Schema):
     long = fields.Float()
     name = fields.String()
     region_id = fields.Number()
-    country_id = fields.Number()
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
     last_updated_by = fields.String()
