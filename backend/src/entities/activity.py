@@ -14,7 +14,7 @@ class Activity(Entity, Base):
     name = Column(String, nullable=False)
     locations = relationship('LocationActivity', uselist=True, backref='activities')
     description = Column(Text)
-    activity_type_id = Column(Integer, ForeignKey('activity_type.id'), nullable=False)
+    activity_type_id = Column(Integer, ForeignKey('activity_types.id'), nullable=False)
     source = Column(String, nullable=False)
     save_path = Column(String, nullable=False)
 
