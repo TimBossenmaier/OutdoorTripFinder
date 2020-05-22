@@ -9,7 +9,7 @@ from .entity import Entity, Base
 class LocationActivity(Entity, Base):
     __tablename__ = 'location-activity'
 
-    activity_id = Column(Integer, ForeignKey('activities.id'),nullable=False)
+    activity_id = Column(Integer, ForeignKey('activities.id'), nullable=False)
     location_id = Column(Integer, ForeignKey('locations.id'), nullable=False)
 
     def __init__(self, activity_id, location_id, created_by):

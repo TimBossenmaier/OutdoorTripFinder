@@ -3,7 +3,6 @@
 from sqlalchemy import Column, String, Text, Integer, ForeignKey
 from marshmallow import Schema, fields
 from sqlalchemy.orm import relationship
-from backend.src.entities.location_activity import LocationActivity
 
 from .entity import Entity, Base
 
@@ -17,6 +16,7 @@ class Activity(Entity, Base):
     activity_type_id = Column(Integer, ForeignKey('activity_types.id'), nullable=False)
     source = Column(String, nullable=False)
     save_path = Column(String, nullable=False)
+    activity_type = relationship('ActivityType', foreign_keys=activity_type_id)
 
     def __init__(self, name, description, activity_type_id, source, save_path, created_by):
         Entity.__int__(self, created_by)

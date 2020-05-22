@@ -15,6 +15,7 @@ class Location(Entity, Base):
     name = Column(String, nullable=False)
     region_id = Column(Integer, ForeignKey('regions.id'), nullable=False)
     region = relationship('Region', foreign_keys=region_id)
+    activities = relationship('LocationActivity', uselist=True, backref='locations')
 
     def __init__(self, lat, long, name, region_id, created_by):
         Entity.__int__(self, created_by)
