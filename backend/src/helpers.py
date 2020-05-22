@@ -19,17 +19,20 @@ def deg_to_radian(val, backwards=False):
 
 def distance_between_coordinates(lat1, long1, lat2, long2):
     """
-    https://en.wikipedia.org/wiki/Haversine_formula
-    :param lat1:
-    :param long1:
-    :param lat2:
-    :param long2:
-    :return:
+    calculates the distance between two geo-coordinates with the Haversine formula
+    reference:
+        https://en.wikipedia.org/wiki/Haversine_formula
+    :param lat1: latitude of position one
+    :param long1: longitude of position one
+    :param lat2: latituted of position two
+    :param long2: longitude of position two
+    :return: ceiled distance between both coordinates
     """
 
     diff_lat = deg_to_radian(lat2 - lat1)
     diff_long = deg_to_radian(long2 - long1)
 
+    # separate calculation into both terms of sum in the square root
     left_form = math.sin(diff_lat / 2) ** 2
     right_form = math.cos(deg_to_radian(lat1)) * math.cos(deg_to_radian(lat2)) * math.sin(diff_long / 2) ** 2
 
