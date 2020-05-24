@@ -26,11 +26,11 @@ class Location(Entity, Base):
 
 
 class LocationSchema(Schema):
-    id = fields.Number()
+    id = fields.Integer()
     lat = fields.Float()
     long = fields.Float()
     name = fields.String()
-    region_id = fields.Number()
+    region_id = fields.Integer()
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
     last_updated_by = fields.String()

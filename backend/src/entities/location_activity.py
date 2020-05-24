@@ -19,9 +19,9 @@ class LocationActivity(Entity, Base):
 
 
 class LocationActivitySchema(Schema):
-    id = fields.Number()
-    activity_id = fields.Number()
-    location_id = fields.Number()
+    id = fields.Integer()
+    activity_id = fields.Integer()
+    location_id = fields.Integer()
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
     last_updated_by = fields.String()
