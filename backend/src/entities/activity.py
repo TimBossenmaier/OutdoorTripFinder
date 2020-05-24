@@ -28,12 +28,19 @@ class Activity(Entity, Base):
 
 
 class ActivitySchema(Schema):
-    id = fields.Number()
+    id = fields.Integer()
     name = fields.String()
     description = fields.String()
-    activity_type_id = fields.Number()
+    activity_type_id = fields.Integer()
     source = fields.String()
     save_path = fields.String()
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
     last_updated_by = fields.String()
+
+
+class ActivityPresentationSchema(ActivitySchema):
+    activity_type = fields.String()
+    location = fields.String()
+    region = fields.String()
+    country = fields.String()
