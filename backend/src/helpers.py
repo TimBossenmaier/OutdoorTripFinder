@@ -1,4 +1,9 @@
 import math
+from backend.src.entities.location import Location, LocationSchema
+from backend.src.entities.activity_type import ActivityType, ActivityTypeSchema
+from backend.src.entities.activity import ActivitySchema, Activity
+from flask import jsonify
+from backend.src.entities.entity import Session, Base, engine
 
 # in km
 EARTH_RADIUS = 6371
@@ -37,3 +42,7 @@ def distance_between_coordinates(lat1, long1, lat2, long2):
     right_form = math.cos(deg_to_radian(lat1)) * math.cos(deg_to_radian(lat2)) * math.sin(diff_long / 2) ** 2
 
     return math.ceil(2 * EARTH_RADIUS * math.asin(math.sqrt(left_form + right_form)))
+
+
+def sort_by_dist(dic):
+    return dic['dist']
