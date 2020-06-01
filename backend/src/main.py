@@ -12,7 +12,6 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 
-
 """ WRITE
 Base.metadata.create_all(engine)
 session = Session()
@@ -112,8 +111,3 @@ def get_tour():
 
 app.config['JSON_AS_ASCII'] = False
 app.run(debug=True, use_reloader=False, host='0.0.0.0')
-
-
-
-
-
