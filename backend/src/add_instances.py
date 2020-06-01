@@ -6,6 +6,7 @@ from backend.src.entities.location_activity import LocationActivity
 from backend.src.entities.region import Region
 from backend.src.entities.entity import Base, Session, engine
 import pandas as pd
+import os
 
 Base.metadata.create_all(engine)
 session = Session()
@@ -34,12 +35,19 @@ data_activities = pd.read_excel(PATH_FILE, sheet_name='activity', header=0,
 data_mappings = pd.read_excel(PATH_FILE, sheet_name='loc_act', header=0,
                               dtype={'id': int, 'act_id': int, 'loc_id': int, 'creator': str})
 
-print(data_mappings.head())
+errors_found = False
+for each_file in data_activities.save_path:
+    if os.path.isfile('D:\Outdoor_Activities\\' + each_file):
+        errors_found = True
+    else:
+        print('D:\Outdoor_Activities\\' + each_file + " not found")
 
-"""
 countries = []
-countries.add(Country('Land', 'Admin'))
-session.add_all(countries)
+if not errors_found:
+    for idx, each_count in data_countries.iterrows():
+        countries.append(Country(each_count.name, each_count.creator))
+
+"""session.add_all(countries)
 session.commit()
 
 regions = []
