@@ -14,26 +14,26 @@ session = Session()
 PATH_FILE = 'D:\Outdoor_Activities\import_table.xlsx'
 
 data_countries = pd.read_excel(PATH_FILE, sheet_name="country", header=0,
-                               dtype={'id': int, 'name': str, 'creator': str})
+                               dtype={'id': int, 'name': str, 'creator': str}, skiprows=2)
 
 data_regions = pd.read_excel(PATH_FILE, sheet_name="region", header=0,
-                             dtype={'id': int, 'name': str, 'country_id': int, 'creator': str})
+                             dtype={'id': int, 'name': str, 'country_id': int, 'creator': str}, skiprows=2)
 
 data_locations = pd.read_excel(PATH_FILE, sheet_name='localisation', header=0,
                                dtype={'id': int, 'lat': float, 'long': float, 'name': str,
-                                      'region_id': int, 'creator': str})
+                                      'region_id': int, 'creator': str}, skiprows=3)
 data_locations.lat = data_locations.lat / 1000
 data_locations.long = data_locations.long / 1000
 
 data_activity_types = pd.read_excel(PATH_FILE, sheet_name='activity_type', header=0,
-                                     dtype={'id': int, 'name': str, 'creator': str})
+                                     dtype={'id': int, 'name': str, 'creator': str}, skiprows=1)
 
 data_activities = pd.read_excel(PATH_FILE, sheet_name='activity', header=0,
                               dtype={'id': int, 'name': str, 'description': str, 'activity_id': int,
-                                     'source': str, 'save_path': str, 'creator': str})
+                                     'source': str, 'save_path': str, 'creator': str}, skiprows=2)
 
 data_mappings = pd.read_excel(PATH_FILE, sheet_name='loc_act', header=0,
-                              dtype={'id': int, 'act_id': int, 'loc_id': int, 'creator': str})
+                              dtype={'id': int, 'act_id': int, 'loc_id': int, 'creator': str}, skiprows=3)
 
 errors_found = False
 for each_file in data_activities.save_path:
@@ -47,8 +47,10 @@ if not errors_found:
     for idx, each_count in data_countries.iterrows():
         countries.append(Country(each_count.name, each_count.creator))
 
-"""session.add_all(countries)
-session.commit()
+    #session.add_all(countries)
+    #session.commit()
+
+"""
 
 regions = []
 regions.add(Region('Region', 1, 'Admin'))
