@@ -105,39 +105,46 @@ for each_file in data_activities.save_path:
         errors_found = True
 
 countries = []
+regions = []
+locations = []
+activity_types = []
+activities = []
+mappings = []
 if not errors_found:
-    print("yay")
+
     for idx in data_countries.index:
-        countries.append(Country(data_countries.loc[0, "name"], data_countries.loc[0, "creator"]))
+        countries.append(Country(data_countries.loc[idx, "name"], data_countries.loc[idx, "creator"]))
     #session.add_all(countries)
     #session.commit()
 
-"""
+    for idx in data_regions.index:
+        regions.append(Region(data_regions.loc[idx, "name"], int(data_regions.loc[idx, "country_id"]),
+                              data_regions.loc[idx, "creator"]))
+    #session.add_all(regions)
+    #session.commit()
 
-regions = []
-regions.add(Region('Region', 1, 'Admin'))
-session.add_all(regions)
-session.commit()
+    for idx in data_locations.index:
+        locations.append(Location(data_locations.loc[idx, "lat"], data_locations.loc[idx, "long"],
+                                  data_locations.loc[idx, "name"], int(data_locations.loc[idx, "region_id"]),
+                                  data_locations.loc[idx, "creator"]))
+    session.add_all(locations)
+    session.commit()
 
-locations = []
-locations.add(Location(45.0, 10.5, 'Location', 1, 'Admin'))
-session.add_all(locations)
-session.commit()
+    for idx in data_activity_types.index:
+        activity_types.append(ActivityType(data_activity_types.loc[idx, "name"],
+                                           data_activity_types.loc[idx, "creator"]))
+    session.add_all(activity_types)
+    session.commit()
 
-activity_types = []
-activitty_types.add(ActivitytType('Type', 'Admin')
-session.add_all(act)
-session.commit()
+    for idx in data_activities.index:
+        activities.append(Activity(data_activities.loc[idx, "name"], data_activities.loc[idx, "description"],
+                                   int(data_activities.loc[idx, "activity_id"]), data_activities.loc[idx, "source"],
+                                   data_activities.loc[idx, "save_path"], data_activities.loc[idx, "creator"]))
+    session.add_all(activities)
+    session.commit()
 
-activities = []
-activities.add(Activity('Albsteig', '', 1, 'outdoor', 'file', 'Admin'))'
-session.add_all(activities)
-session.commit()
-
-loc_act = []
-loc_act.add(LocationActivity('act_id', 'loc_id', 'Admin'))
-session.add_all(loc_act)
-session.commit()
-
-"""
-
+    for idx in data_mappings.index:
+        mappings.append(LocationActivity(int(data_mappings.loc[idx, "act_id"]), int(data_mappings.loc[idx, "loc_id"]),
+                                         data_mappings.loc[idx, "creator"]))
+    session.add_all(mappings)
+    session.commit()

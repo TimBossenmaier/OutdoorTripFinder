@@ -18,7 +18,7 @@ class Location(Entity, Base):
     linked_activities = relationship('LocationActivity', uselist=True, backref='locations')
 
     def __init__(self, lat, long, name, region_id, created_by):
-        Entity.__int__(self, created_by)
+        Entity.__init__(self, created_by)
         self.lat = lat
         self.long = long
         self.name = name

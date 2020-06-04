@@ -12,7 +12,7 @@ class ActivityType(Entity, Base):
     name = Column(String, nullable=False)
 
     def __init__(self, name, created_by):
-        Entity.__int__(self, created_by)
+        Entity.__init__(self, created_by)
         self.name = name
 
 

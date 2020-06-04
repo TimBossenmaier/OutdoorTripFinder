@@ -19,7 +19,7 @@ class Activity(Entity, Base):
     activity_type = relationship('ActivityType', foreign_keys=activity_type_id)
 
     def __init__(self, name, description, activity_type_id, source, save_path, created_by):
-        Entity.__int__(self, created_by)
+        Entity.__init__(self, created_by)
         self.name = name
         self.description = description
         self.activity_type_id = activity_type_id
