@@ -87,22 +87,32 @@ def get_tour():
 
     act = []
     for rec in record_activities:
+        for loc in rec.locations:
+            activity_pres = {
+                'name': rec.name,
+                'description': rec.description,
+                'activity_type': rec.activity_type.name,
+                'source': rec.source,
+                'save_path': rec.save_path,
+                'location': loc.location.name,
+                'region': loc.location.region.name,
+                'country': loc.location.region.country.name,
+                'distance': [x['dist'] for x in locations if x['id'] == loc.location_id] [0] if len([x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
+            }
+            act.append(activity_pres)
+    act = sorted(act, key=lambda k: k['distance'])
 
-        activity_pres = {
-            'name': rec.name,
-            'description': rec.description,
-            'activity_type': rec.activity_type.name,
-            'source': rec.source,
-            'save_path': rec.save_path,
-            'location': rec.locations[0].locations.name,
-            'region': rec.locations[0].locations.region.name,
-            'country': rec.locations[0].locations.region.country.name
-        }
+    # keep only one entry per activity
+    activity_names = set()
+    idx_to_keep = []
+    for idx, item in enumerate(act):
+        print(idx)
+        if item["name"] not in activity_names:
+            activity_names.add(item["name"])
+            idx_to_keep.append(idx)
 
-        act.append(activity_pres)
-
+    act = [act[i] for i in idx_to_keep]
     activities = schema.dump(act)
-
     if len(activities) > 0:
         return jsonify(activities)
     else:

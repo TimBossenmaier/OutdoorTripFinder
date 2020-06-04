@@ -3,7 +3,7 @@
 from sqlalchemy import Column, String, ForeignKey, Integer, Float
 from marshmallow import Schema, fields
 from sqlalchemy.orm import relationship
-
+from backend.src.entities.region import Region
 from .entity import Entity, Base
 
 
@@ -14,8 +14,7 @@ class Location(Entity, Base):
     long = Column(Float, nullable=False)
     name = Column(String, nullable=False)
     region_id = Column(Integer, ForeignKey('regions.id'), nullable=False)
-    region = relationship('Region', foreign_keys=region_id)
-    linked_activities = relationship('LocationActivity', uselist=True, backref='locations')
+    region = relationship(Region, foreign_keys=region_id)
 
     def __init__(self, lat, long, name, region_id, created_by):
         Entity.__init__(self, created_by)

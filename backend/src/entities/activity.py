@@ -3,6 +3,9 @@
 from sqlalchemy import Column, String, Text, Integer, ForeignKey
 from marshmallow import Schema, fields
 from sqlalchemy.orm import relationship
+from backend.src.entities.location_activity import LocationActivity
+from backend.src.entities.activity_type import ActivityType
+from backend.src.entities.location import Location
 
 from .entity import Entity, Base
 
@@ -11,12 +14,11 @@ class Activity(Entity, Base):
     __tablename__ = 'activities'
 
     name = Column(String, nullable=False)
-    locations = relationship('LocationActivity', uselist=True, backref='activities')
     description = Column(Text)
     activity_type_id = Column(Integer, ForeignKey('activity_types.id'), nullable=False)
     source = Column(String, nullable=False)
     save_path = Column(String, nullable=False)
-    activity_type = relationship('ActivityType', foreign_keys=activity_type_id)
+    activity_type = relationship(ActivityType, foreign_keys=activity_type_id)
 
     def __init__(self, name, description, activity_type_id, source, save_path, created_by):
         Entity.__init__(self, created_by)
@@ -25,6 +27,9 @@ class Activity(Entity, Base):
         self.activity_type_id = activity_type_id
         self.source = source
         self.save_path = save_path
+
+    def to_string(self):
+        return self.name + ", " + self.source
 
 
 class ActivitySchema(Schema):
@@ -44,3 +49,4 @@ class ActivityPresentationSchema(ActivitySchema):
     location = fields.String()
     region = fields.String()
     country = fields.String()
+    distance = fields.Float()
