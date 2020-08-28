@@ -26,11 +26,11 @@ Base = declarative_base()
 class Entity:
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    created_at = Column(DateTime)
-    updated_at = Column(DateTime)
-    last_updated_by = Column(String)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False, onupdate=datetime.now())
+    last_updated_by = Column(String, nullable=False)
 
-    def __int__(self, created_by):
+    def __init__(self, created_by):
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.last_updated_by = created_by

@@ -9,7 +9,7 @@ from .entity import Entity, Base
 class LocationActivity(Entity, Base):
     __tablename__ = 'location-activity'
 
-    activity_id = Column(Integer, ForeignKey('activities.id'),nullable=False)
+    activity_id = Column(Integer, ForeignKey('activities.id'), nullable=False)
     location_id = Column(Integer, ForeignKey('locations.id'), nullable=False)
 
     def __init__(self, activity_id, location_id, created_by):
@@ -19,9 +19,9 @@ class LocationActivity(Entity, Base):
 
 
 class LocationActivitySchema(Schema):
-    id = fields.Number()
-    activity_id = fields.Number()
-    location_id = fields.Number()
+    id = fields.Integer()
+    activity_id = fields.Integer()
+    location_id = fields.Integer()
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
     last_updated_by = fields.String()

@@ -21,9 +21,9 @@ class Region(Entity, Base):
 
 
 class RegionSchema(Schema):
-    id = fields.Number()
+    id = fields.Integer()
     name = fields.String()
-    country_id = fields.Number()
+    country_id = fields.Integer()
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
     last_updated_by = fields.String()

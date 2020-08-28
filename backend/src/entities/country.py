@@ -17,7 +17,7 @@ class Country(Entity, Base):
 
 
 class CountrySchema(Schema):
-    id = fields.Number()
+    id = fields.Integer()
     name = fields.String()
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
