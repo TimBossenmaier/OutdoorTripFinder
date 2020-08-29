@@ -36,4 +36,8 @@ tours: Tour[];
       }
     ];
   }
+
+  getTourByID(id): Tour {
+    return this.tours.find(tour => tour.id === id);
+  }
 }
