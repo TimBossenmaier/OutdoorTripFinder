@@ -37,6 +37,10 @@ tours: Tour[];
     ];
   }
 
+  getAllTours(): Tour[] {
+    return this.tours;
+  }
+
   getTourByID(id): Tour {
     return this.tours.find(tour => tour.id === id);
   }
