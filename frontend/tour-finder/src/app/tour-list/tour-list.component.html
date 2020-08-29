@@ -1,0 +1,7 @@
+<div class="ui middle aligned selection divided list">
+  <tf-tour-list-item class="item"
+     *ngFor="let t of tours"
+     [tour]="t"
+     [routerLink]="t.id">
+  </tf-tour-list-item>
+</div>
