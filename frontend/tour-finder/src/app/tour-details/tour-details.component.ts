@@ -18,7 +18,7 @@ tour: Tour;
 
   ngOnInit(): void {
     const params = this.route.snapshot.paramMap;
-    this.tour = this.tdb.getTourByID(params.get('id'));
+    this.tdb.getTourByID(params.get('id')).subscribe(t => this.tour = t);
   }
 
 }

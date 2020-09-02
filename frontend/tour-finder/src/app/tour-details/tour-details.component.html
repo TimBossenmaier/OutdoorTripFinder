@@ -1,4 +1,4 @@
-<div *ngIf="tour">
+<div *ngIf="tour; else loading">
   <h1>{{tour.name}}</h1>
   <h3 *ngIf="tour.description">{{tour.description}}</h3>
   <div class="ui divider"></div>
@@ -17,3 +17,7 @@
     </div>
   </div>
 </div>
+
+<ng-template #loading>
+  <div class="ui active centered inline loader"></div>
+</ng-template>

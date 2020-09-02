@@ -13,7 +13,7 @@ export class TourListComponent implements OnInit {
   constructor(private tdb: TourDbService) { }
 
   ngOnInit(): void {
-    this.tours = this.tdb.getAllTours();
+    this.tdb.getAllTours().subscribe(res => this.tours = res);
   }
 
 }
