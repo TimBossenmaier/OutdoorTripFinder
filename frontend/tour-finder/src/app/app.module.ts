@@ -7,6 +7,7 @@ import { HomeComponent } from './home/home.component';
 import { TourDetailsComponent } from './tour-details/tour-details.component';
 import { TourListComponent } from './tour-list/tour-list.component';
 import { TourListItemComponent } from './tour-list-item/tour-list-item.component';
+import { HttpClientModule} from '@angular/common/http';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import { TourListItemComponent } from './tour-list-item/tour-list-item.component
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    HttpClientModule
   ],
   providers: [],
   bootstrap: [AppComponent]

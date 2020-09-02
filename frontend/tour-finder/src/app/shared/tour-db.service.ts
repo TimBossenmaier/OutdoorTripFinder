@@ -1,47 +1,24 @@
 import { Injectable } from '@angular/core';
 
 import { Tour } from './tour';
+import {HttpClient} from '@angular/common/http';
+import {Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TourDbService {
-tours: Tour[];
+  private apiURL = 'http://localhost:5000';
 
-  constructor() {
-    this.tours = [
-      {
-        id: '1',
-        name: 'Zwei-Taeler-Steig',
-        description: 'Auf dem Zwei-Täler-Steig im Naturpark Südschwarzwald lernen Wanderer zwei Gesichter der Region kennen.',
-        activity_type: 'Wandern',
-        source: 'Outdoor 04 2020',
-        save_path: 'Europa\\Deutschland\\Zwei_Taeler_Steig.pdf',
-        location: 'Waldkirch',
-        region: 'Schwarwald',
-        country: 'Deutschland',
-        distance: 20.5
-      },
-      {
-        id: '2',
-        name: 'Karwendel',
-        description: 'Stolze 125 Gipfel knacken im österreichisch-deutschen Karwendelgebirge die zweitausend-Meter-Marke - die meisten auf Tiroler Seite.',
-        activity_type: 'Wandern',
-        source: 'Outdoor 05 2020',
-        save_path: 'Europa\\Oesterreich\\Karwendel.pdf',
-        location: 'Rappenspitze',
-        region: 'Tirol',
-        country: 'Österreich',
-        distance: 152.3
-      }
-    ];
+  constructor(private http: HttpClient) {
+
   }
 
-  getAllTours(): Tour[] {
-    return this.tours;
+  getAllTours(): Observable<Tour[]> {
+    return this.http.get<any[]>(`${this.apiURL}/get_tour_demo`);
   }
 
-  getTourByID(id): Tour {
-    return this.tours.find(tour => tour.id === id);
+  getTourByID(id: string): Observable<Tour> {
+    return this.http.get<any>(`${this.apiURL}/get_by_id?id=${id}`);
   }
 }
