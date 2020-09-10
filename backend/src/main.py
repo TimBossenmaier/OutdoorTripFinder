@@ -2,7 +2,7 @@
 
 from backend.src.entities.activity import Activity, ActivitySchema, ActivityPresentationSchema
 from backend.src.entities.activity_type import ActivityType
-from backend.src.entities.country import Country
+from backend.src.entities.country import Country, CountryInsertSchema
 from backend.src.entities.location import Location, LocationSchema
 from backend.src.entities.location_activity import LocationActivity
 from backend.src.entities.region import Region
@@ -118,6 +118,16 @@ def get_tour():
         return make_response(jsonify(activities))
     else:
         return make_response("Sorry, no results available")
+
+
+@app.route('/create_country', methods=['POST'])
+def create_country():
+    data = request.get_json()
+    country_schema = CountryInsertSchema()
+    country = Country(**country_schema.load(data))
+    res = country_schema.dump(country.create())
+
+    return make_response(jsonify(res, 201))
 
 
 # ONLY FOR DEV PURPOSE #
