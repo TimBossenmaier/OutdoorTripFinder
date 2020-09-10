@@ -1,0 +1,15 @@
+<div class="ui middle aligned selection divided list">
+  <tf-tour-list-item class="item"
+     *ngFor="let t of tours"
+     [tour]="t"
+     [routerLink]="t.id">
+  </tf-tour-list-item>
+
+  <div *ngIf="!tours" class="ui active dimmer">
+    <div class="ui large text loader">Touren werden gerade entdeckt...</div>
+  </div>
+
+  <p *ngIf="tours && !tours.length">
+    Es wurden leider keine Touren gefunden.
+  </p>
+</div>
