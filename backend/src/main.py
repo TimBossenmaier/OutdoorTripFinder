@@ -163,6 +163,17 @@ def update_author_by_id(id):
 
     return make_response(jsonify(country))
 
+
+@app.route('/countries/<id>', methods=['DELETE'])
+def delete_country_by_id(id):
+
+    session = Session()
+    country_found = session.query(Country).filter(Country.id == id).first()
+    session.delete(country_found)
+    session.commit()
+
+    return make_response("",204)
+
 # ONLY FOR DEV PURPOSE #
 @app.route('/get_tour_demo', methods=['GET'])
 def get_tour_demo():
