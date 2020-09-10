@@ -1,20 +1,19 @@
 # coding=utf-8
 
 from sqlalchemy import Column, ForeignKey, Integer
-from sqlalchemy.orm import relationship
 from marshmallow import Schema, fields
-from backend.src.entities.location import Location
+from sqlalchemy.orm import relationship
 
 from .entity import Entity, Base
 
 
 class LocationActivity(Entity, Base):
-    __tablename__ = 'location_activity'
+    __tablename__ = 'location-activity'
 
     activity_id = Column(Integer, ForeignKey('activities.id'), nullable=False)
     location_id = Column(Integer, ForeignKey('locations.id'), nullable=False)
-    activity = relationship('Activity', foreign_keys=activity_id, backref='locations')
-    location = relationship(Location, foreign_keys=location_id, backref='activities')
+    location = relationship('Location', foreign_keys=location_id)
+    activity = relationship('Activity', foreign_keys=activity_id)
 
     def __init__(self, activity_id, location_id, created_by):
         Entity.__init__(self, created_by)
