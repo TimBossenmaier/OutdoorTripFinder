@@ -1,0 +1,31 @@
+<div *ngIf="tour; else loading">
+  <h1>{{tour.name}}</h1>
+  <p *ngIf="tour.description">
+    <h3 *ngIf="!(tour.description === 'NaN'); else noText ">{{tour.description}}</h3>
+  <div class="ui divider"></div>
+  <div class="ui grid">
+    <div class="four wide column">
+      <h2>{{tour.activity_type}}</h2>
+    </div>
+    <div class="four wide column">
+      <h4>{{tour.location}}</h4>
+      <h4>{{tour.region}}</h4>
+      <h5>{{tour.country}}</h5>
+    </div>
+    <div class="four wide column">
+      <h2>Entfernung</h2>
+      <h3>{{tour.distance}} km</h3>
+    </div>
+    <div class="four wide column">
+      <h2>{{tour.source}}</h2>
+    </div>
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="ui active centered inline loader"></div>
+</ng-template>
+
+<ng-template #noText>
+  <h3> </h3>
+</ng-template>

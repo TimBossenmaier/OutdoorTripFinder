@@ -107,6 +107,7 @@ def get_tour():
     activity_names = set()
     idx_to_keep = []
     for idx, item in enumerate(act):
+
         if item["name"] not in activity_names:
             activity_names.add(item["name"])
             idx_to_keep.append(idx)
@@ -125,6 +126,7 @@ def get_tour_demo():
     curr_lat = 48.087
     curr_long = 9.203
     max_dist = 45
+
 
     session = Session()
 
@@ -166,7 +168,7 @@ def get_tour_demo():
                 'location': loc.location.name,
                 'region': loc.location.region.name,
                 'country': loc.location.region.country.name,
-                'distance': [x['dist'] for x in locations if x['id'] == loc.location_id][0] if len([x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
+                'distance': [x['dist'] for x in locations if x['id'] == loc.location_id] [0] if len([x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
             }
             act.append(activity_pres)
     act = sorted(act, key=lambda k: k['distance'])
@@ -175,6 +177,7 @@ def get_tour_demo():
     activity_names = set()
     idx_to_keep = []
     for idx, item in enumerate(act):
+
         if item["name"] not in activity_names:
             activity_names.add(item["name"])
             idx_to_keep.append(idx)
