@@ -9,7 +9,7 @@ from backend.src.entities.region import Region
 from backend.src.entities.location_type import LocationType
 from backend.src.entities.entity import Session, engine, Base
 from backend.src.helpers import distance_between_coordinates, sort_by_dist
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 
 
@@ -46,12 +46,12 @@ CORS(app)
 Base.metadata.create_all(engine)
 
 
-@app.route('/test')
+@app.route('/test', methods=['GET'])
 def test():
-    return 'Test'
+    return make_response('Test')
 
 
-@app.route('/get_tour')
+@app.route('/get_tour', methods=['GET'])
 def get_tour():
 
     curr_lat = float(request.args.get('lat'))
@@ -115,12 +115,13 @@ def get_tour():
     act = [act[i] for i in idx_to_keep]
     activities = schema.dump(act)
     if len(activities) > 0:
-        return jsonify(activities)
+        return make_response(jsonify(activities))
     else:
-        return "Sorry, no results available"
+        return make_response("Sorry, no results available")
+
 
 # ONLY FOR DEV PURPOSE #
-@app.route('/get_tour_demo')
+@app.route('/get_tour_demo', methods=['GET'])
 def get_tour_demo():
 
     curr_lat = 48.087
@@ -188,10 +189,11 @@ def get_tour_demo():
     for i, act in zip(range(len(activities)),activities):
         act.update({'id': i})
 
-    return jsonify(activities)
+    return make_response(jsonify(activities))
+
 
 # ONLY FOR DEV PURPOSE #
-@app.route('/get_by_id')
+@app.route('/get_by_id', methods=['GET'])
 def get_by_id():
     activities = [
   {
@@ -476,7 +478,7 @@ def get_by_id():
 
     for act in activities:
         if act['id'] == id:
-            return act
+            return make_response(act)
 
 
 app.config['JSON_AS_ASCII'] = False
