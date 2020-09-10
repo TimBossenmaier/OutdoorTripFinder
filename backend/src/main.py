@@ -2,7 +2,7 @@
 
 from backend.src.entities.activity import Activity, ActivitySchema, ActivityPresentationSchema
 from backend.src.entities.activity_type import ActivityType
-from backend.src.entities.country import Country, CountryInsertSchema
+from backend.src.entities.country import Country, CountryInsertSchema, CountrySchema
 from backend.src.entities.location import Location, LocationSchema
 from backend.src.entities.location_activity import LocationActivity
 from backend.src.entities.region import Region
@@ -42,7 +42,7 @@ for record in records:
 """
 
 app = Flask(__name__)
-CORS(app)
+#CORS(app)
 Base.metadata.create_all(engine)
 
 
@@ -129,6 +129,16 @@ def create_country():
 
     return make_response(jsonify(res, 201))
 
+
+@app.route('/find_countries_by_id/<id>', methods=['GET'])
+def get_country_by_id(id):
+    session = Session()
+    country_found = session.query(Country).filter(Country.id == id).first()
+    country_schema = CountrySchema()
+    country = country_schema.dump(country_found)
+    session.close()
+
+    return make_response(jsonify(country))
 
 # ONLY FOR DEV PURPOSE #
 @app.route('/get_tour_demo', methods=['GET'])
