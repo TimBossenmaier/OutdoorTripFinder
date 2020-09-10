@@ -11,6 +11,7 @@ from backend.src.entities.entity import Session, engine, Base
 from backend.src.helpers import distance_between_coordinates, sort_by_dist
 from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
+from datetime import datetime
 
 
 """ WRITE
@@ -120,7 +121,7 @@ def get_tour():
         return make_response("Sorry, no results available")
 
 
-@app.route('/create_country', methods=['POST'])
+@app.route('/countries', methods=['POST'])
 def create_country():
     data = request.get_json()
     country_schema = CountryInsertSchema()
@@ -130,13 +131,35 @@ def create_country():
     return make_response(jsonify(res, 201))
 
 
-@app.route('/find_countries_by_id/<id>', methods=['GET'])
+@app.route('/countries/<id>', methods=['GET'])
 def get_country_by_id(id):
     session = Session()
     country_found = session.query(Country).filter(Country.id == id).first()
     country_schema = CountrySchema()
     country = country_schema.dump(country_found)
     session.close()
+
+    return make_response(jsonify(country))
+
+
+@app.route('/countries/<id>', methods=['PUT'])
+def update_author_by_id(id):
+
+    session = Session()
+    data = request.get_json()
+
+    country_found = session.query(Country).filter(Country.id == id).first()
+
+    if data.get("name"):
+        country_found.name = data["name"]
+        country_found.updated_at = datetime.now()
+
+    session.add(country_found)
+    session.commit()
+
+
+    country_schema = CountrySchema()
+    country = country_schema.dump(country_found)
 
     return make_response(jsonify(country))
 
