@@ -5,7 +5,7 @@ from marshmallow import Schema, fields
 from sqlalchemy.orm import relationship
 from backend.src.entities.country import Country
 
-from .entity import Entity, Base
+from .entity import Entity, EntitySchema, Base
 
 
 class Region(Entity, Base):
@@ -21,10 +21,6 @@ class Region(Entity, Base):
         self.country_id = country_id
 
 
-class RegionSchema(Schema):
-    id = fields.Integer()
+class RegionSchema(EntitySchema):
     name = fields.String()
     country_id = fields.Integer()
-    created_at = fields.DateTime()
-    updated_at = fields.DateTime()
-    last_updated_by = fields.String()

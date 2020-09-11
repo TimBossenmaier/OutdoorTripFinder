@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import create_engine, Column, String, Integer, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from marshmallow import Schema, fields
 import json
 
 dict_db_params = None
@@ -34,3 +35,10 @@ class Entity:
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.last_updated_by = created_by
+
+
+class EntitySchema(Schema):
+    id = fields.Integer()
+    created_at = fields.DateTime()
+    updated_at = fields.DateTime()
+    last_updated_by = fields.String()

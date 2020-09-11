@@ -3,7 +3,7 @@
 from sqlalchemy import Column, String
 from marshmallow import Schema, fields
 
-from .entity import Entity, Base, Session
+from .entity import Entity, EntitySchema, Base, Session
 
 
 class Country(Entity, Base):
@@ -22,14 +22,5 @@ class Country(Entity, Base):
         self.name = name
 
 
-class CountrySchema(Schema):
-    id = fields.Integer()
+class CountrySchema(EntitySchema):
     name = fields.String()
-    created_at = fields.DateTime()
-    updated_at = fields.DateTime()
-    last_updated_by = fields.String()
-
-
-class CountryInsertSchema(Schema):
-    name = fields.String()
-    created_by = fields.String()
