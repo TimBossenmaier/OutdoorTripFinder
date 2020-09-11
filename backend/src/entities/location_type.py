@@ -6,8 +6,8 @@ from marshmallow import Schema, fields
 from .entity import Entity, Base
 
 
-class ActivityType(Entity, Base):
-    __tablename__ = 'activity_types'
+class LocationType(Entity, Base):
+    __tablename__ = 'location_types'
 
     name = Column(String, nullable=False)
 
@@ -16,7 +16,7 @@ class ActivityType(Entity, Base):
         self.name = name
 
 
-class ActivityTypeSchema(Schema):
+class LocationTypeSchema(Schema):
     id = fields.Integer()
     name = fields.String()
     created_at = fields.DateTime()
