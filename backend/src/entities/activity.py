@@ -44,3 +44,4 @@ class ActivityPresentationSchema(ActivitySchema):
     location = fields.String()
     region = fields.String()
     country = fields.String()
+    distance = fields.Number()

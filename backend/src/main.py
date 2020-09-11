@@ -106,7 +106,6 @@ def get_tour():
     activity_names = set()
     idx_to_keep = []
     for idx, item in enumerate(act):
-        print(idx)
         if item["name"] not in activity_names:
             activity_names.add(item["name"])
             idx_to_keep.append(idx)
@@ -175,7 +174,6 @@ def get_tour_demo():
     activity_names = set()
     idx_to_keep = []
     for idx, item in enumerate(act):
-        print(idx)
         if item["name"] not in activity_names:
             activity_names.add(item["name"])
             idx_to_keep.append(idx)
@@ -183,7 +181,7 @@ def get_tour_demo():
     act = [act[i] for i in idx_to_keep]
     activities = schema.dump(act)
 
-    for i, act in zip(range(len(activities)),activities):
+    for i, act in zip(range(len(activities)), activities):
         act.update({'id': i})
 
     return jsonify(activities)
