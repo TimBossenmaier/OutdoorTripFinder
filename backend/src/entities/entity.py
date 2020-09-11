@@ -13,7 +13,7 @@ with open('./entities/db_config.json', encoding='utf-8') as F:
     dict_db_params = json.load(F)
 
 db_url = dict_db_params["host"]
-db_name = dict_db_params["db_name"]
+db_name = 'test' # dict_db_params["db_name"]
 db_user = dict_db_params["user"]
 db_password = dict_db_params["password"]
 
