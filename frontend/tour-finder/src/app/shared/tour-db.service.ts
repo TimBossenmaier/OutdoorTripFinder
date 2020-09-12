@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { map } from 'rxjs/operators';
-import {HttpClient} from '@angular/common/http';
-import {Observable} from 'rxjs';
+import { catchError, map, retry } from 'rxjs/operators';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {Observable, throwError} from 'rxjs';
 
 import { Tour } from './tour';
 import { TourRaw } from './tour-raw';
@@ -21,14 +21,23 @@ export class TourDbService {
   getAllTours(): Observable<Tour[]> {
     return this.http.get<TourRaw[]>(`${this.apiURL}/get_tour_demo`)
       .pipe(
-        map( toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)))
+        retry(3),
+        map( toursRaw => toursRaw.map(t => TourFactory.fromRaw(t))),
+        catchError(this.errorHandler)
       );
   }
 
   getTourByID(id: string): Observable<Tour> {
     return this.http.get<TourRaw>(`${this.apiURL}/get_by_id?id=${id}`)
       .pipe(
-      map(t => TourFactory.fromRaw(t))
+        retry(3),
+        map(t => TourFactory.fromRaw(t)),
+        catchError(this.errorHandler)
     );
+  }
+
+  private errorHandler(error: HttpErrorResponse): Observable<any> {
+    console.error('Fehler aufgetreten!');
+    return throwError(error);
   }
 }
