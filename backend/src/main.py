@@ -3,6 +3,7 @@
 from backend.src.entities.activity import Activity, ActivitySchema, ActivityPresentationSchema
 from backend.src.entities.activity_type import ActivityType
 from backend.src.entities.country import Country
+from backend.src.entities.location_type import LocationType
 from backend.src.entities.location import Location, LocationSchema
 from backend.src.entities.location_activity import LocationActivity
 from backend.src.entities.region import Region
@@ -44,154 +45,7 @@ app = Flask(__name__)
 CORS(app)
 Base.metadata.create_all(engine)
 
-
-@app.route('/test')
-def test():
-    return 'Test'
-
-
-@app.route('/get_tour')
-def get_tour():
-
-    curr_lat = float(request.args.get('lat'))
-    curr_long = float(request.args.get('long'))
-    max_dist = float(request.args.get('dist'))
-
-    session = Session()
-
-    record_location = session.query(Location)\
-                             .filter(Location.lat > curr_lat - 3 * max_dist / 100,
-                                     Location.lat < curr_lat + 3 * max_dist / 100,
-                                     Location.long > curr_long - 3 * max_dist / 100,
-                                     Location.long < curr_long + 3 * max_dist / 100)\
-                             .all()
-
-    schema = LocationSchema(many=True, only=('name', 'lat', 'long', 'id'))
-    locations = schema.dump(record_location)
-
-    for i, loc in enumerate(locations):
-        loc.update({"dist": distance_between_coordinates(loc["lat"], loc["long"], curr_lat, curr_long)})
-    locations = [i for i in locations if i['dist'] < max_dist]
-    locations.sort(key=sort_by_dist)
-    ids = [int(i['id']) for i in locations]
-
-    record_activities = session.query(Activity)\
-                               .join(ActivityType)\
-                               .join(LocationActivity)\
-                               .join(Location).join(Region)\
-                               .join(Country)\
-                               .filter(Location.id.in_(ids))\
-                               .all()
-
-    schema = ActivityPresentationSchema(many=True)
-
-    act = []
-    for rec in record_activities:
-        for loc in rec.locations:
-            activity_pres = {
-                'name': rec.name,
-                'description': rec.description,
-                'activity_type': rec.activity_type.name,
-                'source': rec.source,
-                'save_path': rec.save_path,
-                'location': loc.location.name,
-                'region': loc.location.region.name,
-                'country': loc.location.region.country.name,
-                'distance': [x['dist'] for x in locations if x['id'] == loc.location_id] [0] if len([x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
-            }
-            act.append(activity_pres)
-    act = sorted(act, key=lambda k: k['distance'])
-
-    # keep only one entry per activity
-    activity_names = set()
-    idx_to_keep = []
-    for idx, item in enumerate(act):
-        print(idx)
-        if item["name"] not in activity_names:
-            activity_names.add(item["name"])
-            idx_to_keep.append(idx)
-
-    act = [act[i] for i in idx_to_keep]
-    activities = schema.dump(act)
-    if len(activities) > 0:
-        return jsonify(activities)
-    else:
-        return "Sorry, no results available"
-
-# ONLY FOR DEV PURPOSE #
-@app.route('/get_tour_demo')
-def get_tour_demo():
-
-    curr_lat = 48.087
-    curr_long = 9.203
-    max_dist = 45
-
-
-    session = Session()
-
-    record_location = session.query(Location)\
-                             .filter(Location.lat > curr_lat - 3 * max_dist / 100,
-                                     Location.lat < curr_lat + 3 * max_dist / 100,
-                                     Location.long > curr_long - 3 * max_dist / 100,
-                                     Location.long < curr_long + 3 * max_dist / 100)\
-                             .all()
-
-    schema = LocationSchema(many=True, only=('name', 'lat', 'long', 'id'))
-    locations = schema.dump(record_location)
-
-    for i, loc in enumerate(locations):
-        loc.update({"dist": distance_between_coordinates(loc["lat"], loc["long"], curr_lat, curr_long)})
-    locations = [i for i in locations if i['dist'] < max_dist]
-    locations.sort(key=sort_by_dist)
-    ids = [int(i['id']) for i in locations]
-
-    record_activities = session.query(Activity)\
-                               .join(ActivityType)\
-                               .join(LocationActivity)\
-                               .join(Location).join(Region)\
-                               .join(Country)\
-                               .filter(Location.id.in_(ids))\
-                               .all()
-
-    schema = ActivityPresentationSchema(many=True)
-
-    act = []
-    for rec in record_activities:
-        for loc in rec.locations:
-            activity_pres = {
-                'name': rec.name,
-                'description': rec.description,
-                'activity_type': rec.activity_type.name,
-                'source': rec.source,
-                'save_path': rec.save_path,
-                'location': loc.location.name,
-                'region': loc.location.region.name,
-                'country': loc.location.region.country.name,
-                'distance': [x['dist'] for x in locations if x['id'] == loc.location_id] [0] if len([x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
-            }
-            act.append(activity_pres)
-    act = sorted(act, key=lambda k: k['distance'])
-
-    # keep only one entry per activity
-    activity_names = set()
-    idx_to_keep = []
-    for idx, item in enumerate(act):
-        if item["name"] not in activity_names:
-            activity_names.add(item["name"])
-            idx_to_keep.append(idx)
-
-    act = [act[i] for i in idx_to_keep]
-    activities = schema.dump(act)
-
-    for i, act in zip(range(len(activities)), activities):
-        act.update({'id': i})
-
-    return jsonify(activities)
-
-# ONLY FOR DEV PURPOSE #
-@app.route('/get_by_id')
-def get_by_id():
-    activities = [
+predefined_activities = [
   {
     "activity_type": "Kanu",
     "country": "Deutschland",
@@ -470,11 +324,187 @@ def get_by_id():
   }
 ]
 
+
+@app.route('/test')
+def test():
+    return 'Test'
+
+
+@app.route('/get_tour')
+def get_tour():
+
+    curr_lat = float(request.args.get('lat'))
+    curr_long = float(request.args.get('long'))
+    max_dist = float(request.args.get('dist'))
+
+    session = Session()
+
+    record_location = session.query(Location)\
+                             .filter(Location.lat > curr_lat - 3 * max_dist / 100,
+                                     Location.lat < curr_lat + 3 * max_dist / 100,
+                                     Location.long > curr_long - 3 * max_dist / 100,
+                                     Location.long < curr_long + 3 * max_dist / 100)\
+                             .all()
+
+    schema = LocationSchema(many=True, only=('name', 'lat', 'long', 'id'))
+    locations = schema.dump(record_location)
+
+    for i, loc in enumerate(locations):
+        loc.update({"dist": distance_between_coordinates(loc["lat"], loc["long"], curr_lat, curr_long)})
+    locations = [i for i in locations if i['dist'] < max_dist]
+    locations.sort(key=sort_by_dist)
+    ids = [int(i['id']) for i in locations]
+
+    record_activities = session.query(Activity)\
+                               .join(ActivityType)\
+                               .join(LocationActivity)\
+                               .join(Location).join(Region)\
+                               .join(Country)\
+                               .filter(Location.id.in_(ids))\
+                               .all()
+
+    schema = ActivityPresentationSchema(many=True)
+
+    act = []
+    for rec in record_activities:
+        for loc in rec.locations:
+            activity_pres = {
+                'name': rec.name,
+                'description': rec.description,
+                'activity_type': rec.activity_type.name,
+                'source': rec.source,
+                'save_path': rec.save_path,
+                'location': loc.location.name,
+                'region': loc.location.region.name,
+                'country': loc.location.region.country.name,
+                'distance': [x['dist'] for x in locations if x['id'] == loc.location_id] [0] if len([x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
+            }
+            act.append(activity_pres)
+    act = sorted(act, key=lambda k: k['distance'])
+
+    # keep only one entry per activity
+    activity_names = set()
+    idx_to_keep = []
+    for idx, item in enumerate(act):
+        print(idx)
+        if item["name"] not in activity_names:
+            activity_names.add(item["name"])
+            idx_to_keep.append(idx)
+
+    act = [act[i] for i in idx_to_keep]
+    activities = schema.dump(act)
+    if len(activities) > 0:
+        return jsonify(activities)
+    else:
+        return "Sorry, no results available"
+
+# ONLY FOR DEV PURPOSE #
+@app.route('/get_tour_demo')
+def get_tour_demo():
+
+    curr_lat = 48.087
+    curr_long = 9.203
+    max_dist = 45
+
+
+    session = Session()
+
+    record_location = session.query(Location)\
+                             .filter(Location.lat > curr_lat - 3 * max_dist / 100,
+                                     Location.lat < curr_lat + 3 * max_dist / 100,
+                                     Location.long > curr_long - 3 * max_dist / 100,
+                                     Location.long < curr_long + 3 * max_dist / 100)\
+                             .all()
+
+    schema = LocationSchema(many=True, only=('name', 'lat', 'long', 'id'))
+    locations = schema.dump(record_location)
+
+    for i, loc in enumerate(locations):
+        loc.update({"dist": distance_between_coordinates(loc["lat"], loc["long"], curr_lat, curr_long)})
+    locations = [i for i in locations if i['dist'] < max_dist]
+    locations.sort(key=sort_by_dist)
+    ids = [int(i['id']) for i in locations]
+
+    record_activities = session.query(Activity)\
+                               .join(ActivityType)\
+                               .join(LocationActivity)\
+                               .join(Location).join(Region)\
+                               .join(Country)\
+                               .filter(Location.id.in_(ids))\
+                               .all()
+
+    schema = ActivityPresentationSchema(many=True)
+
+    act = []
+    for rec in record_activities:
+        for loc in rec.locations:
+            activity_pres = {
+                'name': rec.name,
+                'description': rec.description,
+                'activity_type': rec.activity_type.name,
+                'source': rec.source,
+                'save_path': rec.save_path,
+                'location': loc.location.name,
+                'region': loc.location.region.name,
+                'country': loc.location.region.country.name,
+                'distance': [x['dist'] for x in locations if x['id'] == loc.location_id] [0] if len([x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
+            }
+            act.append(activity_pres)
+    act = sorted(act, key=lambda k: k['distance'])
+
+    # keep only one entry per activity
+    activity_names = set()
+    idx_to_keep = []
+    for idx, item in enumerate(act):
+        if item["name"] not in activity_names:
+            activity_names.add(item["name"])
+            idx_to_keep.append(idx)
+
+    act = [act[i] for i in idx_to_keep]
+    activities = schema.dump(act)
+
+    for i, act in zip(range(len(activities)), activities):
+        act.update({'id': i})
+
+    return jsonify(activities)
+
+
+# ONLY FOR DEV PURPOSE #
+@app.route('/get_by_id')
+def get_by_id():
+
     id = int(request.args.get('id'))
 
-    for act in activities:
+    for act in predefined_activities:
         if act['id'] == id:
             return act
+
+
+# ONLY FOR DEV PURPOSE #
+@app.route('/search_tours')
+def search_tours():
+
+    search_term = str(request.args.get('search'))
+
+    res = list(filter(lambda act: search_term in act['name'], predefined_activities))
+    res.extend(list(filter(lambda act: search_term in act['description'], predefined_activities)))
+
+    schema = ActivityPresentationSchema(many=True)
+    # keep only one entry per activity
+    activity_names = set()
+    idx_to_keep = []
+    for idx, item in enumerate(res):
+        if item["name"] not in activity_names:
+            activity_names.add(item["name"])
+            idx_to_keep.append(idx)
+
+    act = [res[i] for i in idx_to_keep]
+    activities = schema.dump(act)
+
+    for i, act in zip(range(len(activities)), activities):
+        act.update({'id': i})
+
+    return jsonify(activities)
 
 
 app.config['JSON_AS_ASCII'] = False

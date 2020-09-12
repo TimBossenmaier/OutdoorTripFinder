@@ -8,6 +8,7 @@ import { TourDetailsComponent } from './tour-details/tour-details.component';
 import { TourListComponent } from './tour-list/tour-list.component';
 import { TourListItemComponent } from './tour-list-item/tour-list-item.component';
 import { HttpClientModule} from '@angular/common/http';
+import { SearchComponent } from './search/search.component';
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import { HttpClientModule} from '@angular/common/http';
     HomeComponent,
     TourDetailsComponent,
     TourListComponent,
-    TourListItemComponent
+    TourListItemComponent,
+    SearchComponent
   ],
   imports: [
     BrowserModule,

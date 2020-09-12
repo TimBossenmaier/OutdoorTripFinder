@@ -27,6 +27,15 @@ export class TourDbService {
       );
   }
 
+  getAllToursSearch(searchTerm: string): Observable<Tour[]> {
+    return this.http.get<TourRaw[]>(`${this.apiURL}/search_tours?search=${searchTerm}`)
+      .pipe(
+        retry(3),
+        map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t))),
+        catchError(this.errorHandler)
+      );
+  }
+
   getTourByID(id: string): Observable<Tour> {
     return this.http.get<TourRaw>(`${this.apiURL}/get_by_id?id=${id}`)
       .pipe(
