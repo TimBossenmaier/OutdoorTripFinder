@@ -3,6 +3,7 @@
 from backend.src.entities.activity import Activity, ActivitySchema, ActivityPresentationSchema
 from backend.src.entities.activity_type import ActivityType
 from backend.src.entities.country import Country
+from backend.src.entities.location_type import LocationType
 from backend.src.entities.location import Location, LocationSchema
 from backend.src.entities.location_activity import LocationActivity
 from backend.src.entities.region import Region
