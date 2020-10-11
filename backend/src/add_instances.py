@@ -24,14 +24,16 @@ data_countries = pd.read_excel(PATH_FILE, sheet_name="country", header=0,
                                dtype={'id': int, 'name': str, 'creator': str}, skiprows=range(1, 21))
 
 data_regions = pd.read_excel(PATH_FILE, sheet_name="region", header=0,
-                             dtype={'id': int, 'name': str, 'country_id': int, 'creator': str}, skiprows=range(1, 135))
+
+                             dtype={'id': int, 'name': str, 'country_id': int, 'creator': str}, skiprows=range(1, 156))
 
 data_location_type = pd.read_excel(PATH_FILE, sheet_name="location_type", header=0,
-                                   dtype={'id': int, 'name': str, 'creator': str}, skiprows=range(1, 8))
+                                   dtype={'id': int, 'name': str, 'creator': str}, skiprows=range(1, 7))
 
 data_locations = pd.read_excel(PATH_FILE, sheet_name='localisation', header=0,
                                dtype={'id': int, 'lat': float, 'long': float, 'name': str, 'location_type_id': int,
-                                      'region_id': int, 'creator': str}, skiprows=range(1, 715))
+                                      'region_id': int, 'creator': str}, skiprows=range(1, 985))
+
 data_locations.lat = data_locations.lat / 1000
 data_locations.long = data_locations.long / 1000
 
@@ -40,10 +42,11 @@ data_activity_types = pd.read_excel(PATH_FILE, sheet_name='activity_type', heade
 
 data_activities = pd.read_excel(PATH_FILE, sheet_name='activity', header=0,
                                 dtype={'id': int, 'name': str, 'description': str, 'activity_id': int, 'source': str,
-                                       'save_path': str, 'multi-day': bool, 'creator': str}, skiprows=range(1, 227))
+
+                                       'save_path': str, 'multi-day': bool, 'creator': str}, skiprows=range(1, 267))
 
 data_mappings = pd.read_excel(PATH_FILE, sheet_name='loc_act', header=0,
-                              dtype={'id': int, 'act_id': int, 'loc_id': int, 'creator': str}, skiprows=range(1, 779))
+                              dtype={'id': int, 'act_id': int, 'loc_id': int, 'creator': str}, skiprows=range(1, 1089))
 
 wb = xlrd.open_workbook(PATH_FILE)
 sheet_activity = wb.sheet_by_index(0)
@@ -156,8 +159,8 @@ if not errors_found:
 
     for idx in data_locations.index:
         locations.append(Location(data_locations.loc[idx, "lat"], data_locations.loc[idx, "long"],
-                                  data_locations.loc[idx, "name"], int(data_locations.loc[idx, "region_id"]),
-                                  data_locations.loc[idx, "creator"]))
+                                  data_locations.loc[idx, "name"], int(data_locations.loc[idx, "location_type_id"]),
+                                  int(data_locations.loc[idx, "region_id"]),data_locations.loc[idx, "creator"]))
     session.add_all(locations)
     session.commit()
 
@@ -170,7 +173,8 @@ if not errors_found:
     for idx in data_activities.index:
         activities.append(Activity(data_activities.loc[idx, "name"], data_activities.loc[idx, "description"],
                                    int(data_activities.loc[idx, "activity_id"]), data_activities.loc[idx, "source"],
-                                   data_activities.loc[idx, "save_path"], data_activities.loc[idx, "creator"]))
+                                   data_activities.loc[idx, "save_path"], data_activities.loc[idx, "multi-day"],
+                                   data_activities.loc[idx, "creator"]))
     session.add_all(activities)
     session.commit()
 
