@@ -3,10 +3,10 @@
 from backend.src.entities.activity import Activity, ActivitySchema, ActivityPresentationSchema
 from backend.src.entities.activity_type import ActivityType
 from backend.src.entities.country import Country
+from backend.src.entities.location_type import LocationType
 from backend.src.entities.location import Location, LocationSchema
 from backend.src.entities.location_activity import LocationActivity
 from backend.src.entities.region import Region
-from backend.src.entities.location_type import LocationType
 from backend.src.entities.entity import Session, engine, Base
 from backend.src.helpers import distance_between_coordinates, sort_by_dist
 from flask import Flask, request, jsonify
@@ -107,7 +107,7 @@ def get_tour():
     activity_names = set()
     idx_to_keep = []
     for idx, item in enumerate(act):
-
+        print(idx)
         if item["name"] not in activity_names:
             activity_names.add(item["name"])
             idx_to_keep.append(idx)
@@ -177,7 +177,6 @@ def get_tour_demo():
     activity_names = set()
     idx_to_keep = []
     for idx, item in enumerate(act):
-
         if item["name"] not in activity_names:
             activity_names.add(item["name"])
             idx_to_keep.append(idx)
@@ -185,7 +184,7 @@ def get_tour_demo():
     act = [act[i] for i in idx_to_keep]
     activities = schema.dump(act)
 
-    for i, act in zip(range(len(activities)),activities):
+    for i, act in zip(range(len(activities)), activities):
         act.update({'id': i})
 
     return jsonify(activities)

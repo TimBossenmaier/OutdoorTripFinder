@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from sqlalchemy import Column, ForeignKey, Integer
+from sqlalchemy.orm import relationship
 from marshmallow import Schema, fields
 from sqlalchemy.orm import relationship
 

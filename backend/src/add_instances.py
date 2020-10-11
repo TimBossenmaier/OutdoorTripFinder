@@ -24,6 +24,7 @@ data_countries = pd.read_excel(PATH_FILE, sheet_name="country", header=0,
                                dtype={'id': int, 'name': str, 'creator': str}, skiprows=range(1, 21))
 
 data_regions = pd.read_excel(PATH_FILE, sheet_name="region", header=0,
+
                              dtype={'id': int, 'name': str, 'country_id': int, 'creator': str}, skiprows=range(1, 156))
 
 data_location_type = pd.read_excel(PATH_FILE, sheet_name="location_type", header=0,
@@ -32,6 +33,7 @@ data_location_type = pd.read_excel(PATH_FILE, sheet_name="location_type", header
 data_locations = pd.read_excel(PATH_FILE, sheet_name='localisation', header=0,
                                dtype={'id': int, 'lat': float, 'long': float, 'name': str, 'location_type_id': int,
                                       'region_id': int, 'creator': str}, skiprows=range(1, 985))
+
 data_locations.lat = data_locations.lat / 1000
 data_locations.long = data_locations.long / 1000
 
@@ -40,6 +42,7 @@ data_activity_types = pd.read_excel(PATH_FILE, sheet_name='activity_type', heade
 
 data_activities = pd.read_excel(PATH_FILE, sheet_name='activity', header=0,
                                 dtype={'id': int, 'name': str, 'description': str, 'activity_id': int, 'source': str,
+
                                        'save_path': str, 'multi-day': bool, 'creator': str}, skiprows=range(1, 267))
 
 data_mappings = pd.read_excel(PATH_FILE, sheet_name='loc_act', header=0,
