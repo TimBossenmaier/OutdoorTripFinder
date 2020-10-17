@@ -50,6 +50,7 @@ class TestingConfig(Config):
                        'postgresql://{}:{}@{}/{}'.format(Config.TEST_DATABASE_USER, Config.TEST_DATABASE_PASSWORD,
                                                          Config.TEST_DATABASE_HOST, Config.TEST_DATABASE_NAME)
 
+
 config = {
     'dev': DevelopmentConfig,
     'test': TestingConfig,
