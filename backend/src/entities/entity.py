@@ -6,6 +6,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from marshmallow import Schema, fields
 import json
+from .. import db
+"""
 
 dict_db_params = None
 
@@ -22,6 +24,7 @@ engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_url}/{db_name}
 Session = sessionmaker(bind=engine)
 
 Base = declarative_base()
+"""
 
 
 class Entity:
