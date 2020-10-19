@@ -1,9 +1,4 @@
 import math
-from backend.app.entities.location import Location, LocationSchema
-from backend.app.entities.activity_type import ActivityType, ActivityTypeSchema
-from backend.app.entities.activity import ActivitySchema, Activity
-from flask import jsonify
-from backend.app.entities.entity import Session, Base, engine
 
 # in km
 EARTH_RADIUS = 6371

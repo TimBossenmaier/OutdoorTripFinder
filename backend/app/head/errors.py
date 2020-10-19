@@ -1,6 +1,6 @@
-from backend.app.utils.responses import BAD_REQUEST_400, SERVER_ERROR_404, SERVER_ERROR_500
+from app.utils.responses import BAD_REQUEST_400, SERVER_ERROR_404, SERVER_ERROR_500
 from . import get_main_app
-from backend.app.utils.responses import response_with
+from app.utils.responses import response_with
 
 main_app = get_main_app()
 

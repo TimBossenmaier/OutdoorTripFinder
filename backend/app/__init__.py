@@ -4,7 +4,7 @@ from flask_mail import Mail
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
-from backend.config import config
+from config import config
 from .head import app_main as main_blueprint
 
 
