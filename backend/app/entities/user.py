@@ -1,6 +1,6 @@
 from marshmallow import fields
-from werkzeug import generate_password_hash, check_password_hash
-from .. import db
+from werkzeug.security import generate_password_hash, check_password_hash
+from backend.app import db
 from .entity import Entity, EntitySchema
 
 

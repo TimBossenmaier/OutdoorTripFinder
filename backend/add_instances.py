@@ -1,11 +1,11 @@
-from backend.src.entities.activity_type import ActivityType
-from backend.src.entities.activity import Activity
-from backend.src.entities.country import Country
-from backend.src.entities.location import Location
-from backend.src.entities.location_activity import LocationActivity
-from backend.src.entities.region import Region
-from backend.src.entities.entity import Base, Session, engine
-from backend.src.entities.location_type import LocationType
+from backend.app.entities.activity_type import ActivityType
+from backend.app.entities.activity import Activity
+from backend.app.entities.country import Country
+from backend.app.entities.location import Location
+from backend.app.entities.location_activity import LocationActivity
+from backend.app.entities.region import Region
+from backend.app.entities.entity import Base, Session, engine
+from backend.app.entities.location_type import LocationType
 import pandas as pd
 import os
 import xlrd
@@ -14,6 +14,7 @@ import xlrd
 def intersection(ids, keys_used):
     lst3 = [v for v in keys_used if v not in ids]
     return lst3
+
 
 Base.metadata.create_all(engine)
 session = Session()

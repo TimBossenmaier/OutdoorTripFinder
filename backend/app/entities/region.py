@@ -3,7 +3,7 @@
 from sqlalchemy import Column, String, Integer, ForeignKey
 from marshmallow import Schema, fields
 from sqlalchemy.orm import relationship
-from backend.src.entities.country import Country
+from backend.app.entities.country import Country
 
 from .entity import Entity, EntitySchema, Base, Session
 
