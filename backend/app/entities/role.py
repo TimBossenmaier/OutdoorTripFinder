@@ -1,4 +1,4 @@
-from backend.app import db
+from app import db
 from .entity import Entity, EntitySchema
 from marshmallow import fields
 
