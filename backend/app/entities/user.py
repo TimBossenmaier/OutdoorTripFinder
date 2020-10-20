@@ -1,7 +1,7 @@
-from marshmallow import fields
+from marshmallow import fields, Schema
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import Column, String, Integer, ForeignKey
-from .entity import Entity, EntitySchema, Base
+from .entity import Entity, Base
 
 
 class User(Entity, Base):
@@ -21,11 +21,31 @@ class User(Entity, Base):
     def __repr__(self):
         return '<User %r>' % self.username
 
+    def create(self, session):
+
+        session.add(self)
+        session.commit()
+
+        return self
+
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    class UserSchema(EntitySchema):
-        username = fields.String()
-        email = fields.String()
-        password = fields.String()
-        role_id = fields.Integer()
+
+class UserInsertSchema(Schema):
+    username = fields.String()
+    email = fields.String()
+    password = fields.String()
+    role_id = fields.Integer()
+    created_by = fields.String()
+
+
+class UserSchema(Schema):
+    id = fields.String()
+    username = fields.String()
+    email = fields.String()
+    password_hash = fields.String()
+    role_id = fields.Integer()
+    created_at = fields.DateTime()
+    updated_at = fields.DateTime()
+    last_updated_by = fields.String()
