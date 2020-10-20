@@ -46,7 +46,7 @@ class ProductionConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    SQL_DATABASE_URI = os.environ.get('PROD_DATABASE_URL') or \
+    SQLAlCHEMY_DATABASE_URI = os.environ.get('PROD_DATABASE_URL') or \
                        'postgresql://{}:{}@{}/{}'.format(Config.TEST_DATABASE_USER, Config.TEST_DATABASE_PASSWORD,
                                                          Config.TEST_DATABASE_HOST, Config.TEST_DATABASE_NAME)
 
