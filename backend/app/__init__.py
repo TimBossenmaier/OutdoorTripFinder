@@ -5,6 +5,7 @@ from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from .head import app_main as main_blueprint
+from .auth import auth as auth_blueprint
 from config import config
 
 bootstrap = Bootstrap()
@@ -26,5 +27,6 @@ def create_app(config_name):
     db.init_app(app)
 
     app.register_blueprint(main_blueprint)
+    app.register_blueprint(auth_blueprint)
 
     return app
