@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, make_response
 from ..entities.user import User
+from ..entities.entity import Session
 
 auth = Blueprint('auth', __name__)
 
@@ -8,11 +9,11 @@ auth = Blueprint('auth', __name__)
 def check_login():
 
     data = request.get_json()
-
-    if data["username"]:
-        user = User.query.filter_by(username=data["username"]).first()
-    elif data["email"]:
-        user = User.query.filter_by(email=data["email"]).first()
+    session = Session()
+    if data.get("username"):
+        user = session.query(User).filter_by(username=data["username"]).first()
+    elif data.get("email"):
+        user = session.query(User).filter_by(email=data["email"]).first()
     else:
         return make_response(jsonify('No username/email provided', 422))
 

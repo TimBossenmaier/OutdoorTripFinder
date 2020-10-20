@@ -5,25 +5,31 @@ from sqlalchemy import create_engine, Column, String, Integer, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from marshmallow import Schema, fields
-import json
-"""
+from dotenv import load_dotenv
+import os
 
-dict_db_params = None
+load_dotenv('../.env')
 
-# read the config JSON and load it as JSON
-with open('./entities/db_config.json', encoding='utf-8') as F:
-    dict_db_params = json.load(F)
+engine = None
+if os.environ.get('FLASK_CONFIG') == 'prod':
+    engine = create_engine('postgresql://{}:{}@{}/{}'.format(os.environ.get('PROD_DATABASE_USER'),
+                                                             os.environ.get('PROD_DATABASE_PASSWORD'),
+                                                             os.environ.get('PROD_DATABASE_HOST'),
+                                                             os.environ.get('PROD_DATABASE_NAME')))
+elif os.environ.get('FLASK_CONFIG') == 'test':
+    engine = create_engine('postgresql://{}:{}@{}/{}'.format(os.environ.get('TEST_DATABASE_USER'),
+                                                             os.environ.get('TEST_DATABASE_PASSWORD'),
+                                                             os.environ.get('TEST_DATABASE_HOST'),
+                                                             os.environ.get('TEST_DATABASE_NAME')))
+else:
+    engine = create_engine('postgresql://{}:{}@{}/{}'.format(os.environ.get('DEV_DATABASE_USER'),
+                                                             os.environ.get('DEV_DATABASE_PASSWORD'),
+                                                             os.environ.get('DEV_DATABASE_HOST'),
+                                                             os.environ.get('DEV_DATABASE_NAME')))
 
-db_url = dict_db_params["host"]
-db_name = 'test' # dict_db_params["db_name"]
-db_user = dict_db_params["user"]
-db_password = dict_db_params["password"]
-
-engine = create_engine(f'postgresql://{db_user}:{db_password}@{db_url}/{db_name}')
 Session = sessionmaker(bind=engine)
 
 Base = declarative_base()
-"""
 
 
 class Entity:

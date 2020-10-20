@@ -1,15 +1,15 @@
 from marshmallow import fields
 from werkzeug.security import generate_password_hash, check_password_hash
-from app import db
-from .entity import Entity, EntitySchema
+from sqlalchemy import Column, String, Integer, ForeignKey
+from .entity import Entity, EntitySchema, Base
 
 
-class User(Entity, db.Model):
+class User(Entity, Base):
     __tablename__ = 'users'
-    username = db.Column(db.String, unique=True, nullable=False)
-    email = db.Column(db.String, unique=True, nullable=False)
-    password_hash = db.Column(db.String(256))
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    username = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    password_hash = Column(String(256))
+    role_id = Column(Integer, ForeignKey('roles.id'))
 
     def __init__(self, username, email, password, role_id, created_by):
         Entity.__init__(self, created_by)

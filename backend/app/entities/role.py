@@ -1,13 +1,13 @@
-from app import db
-from .entity import Entity, EntitySchema
+from .entity import Entity, EntitySchema, Base
 from marshmallow import fields
+from sqlalchemy import Column, String
+from sqlalchemy.orm import relationship
 
-
-class Role(Entity, db.Model):
+class Role(Entity, Base):
 
     __tablename__ = 'roles'
-    name = db.Column(db.String, unique=True)
-    users = db.relationship('User', backref='role')
+    name = Column(String, unique=True)
+    users = relationship('User', backref='role')
 
     def __init__(self, name, created_by):
         Entity.__init__(self, created_by)
