@@ -7,6 +7,7 @@ from datetime import datetime
 from .entity import Entity, Base
 
 
+# TODO: check what can be part of entity (e.g. update())
 class User(Entity, Base):
     __tablename__ = 'users'
     username = Column(String, unique=True, nullable=False)
@@ -52,14 +53,6 @@ class User(Entity, Base):
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    def generate_confirmation_token(self, expiration=86400):
-        """
-        expiration: 24 h
-        """
-
-        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expires_in=expiration)
-        return s.dumps({'confirm': self.id}).decode('utf-8')
-
     def confirm(self, session):
 
         self.confirmed = True
@@ -70,6 +63,37 @@ class User(Entity, Base):
 
         return True
 
+    def generate_confirmation_token(self, expiration=86400):
+        """
+        expiration: 24 h
+        """
+
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expires_in=expiration)
+        return s.dumps({'confirm': self.id}).decode('utf-8')
+
+    def generate_reset_token(self, expiration=86400):
+        """
+        expiration: 24 h
+        """
+
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expires_in=expiration)
+        return s.dumps({'reset': self.id}).decode('utf-8')
+
+    @staticmethod
+    def reset_password(session, token, json):
+
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+
+        try:
+            data = s.loads(token.encode('utf-8'))
+        except:
+            return False
+
+        user = session.query(User).get(data.get('reset'))
+        if user is None:
+            return False
+        user.update_password(json["password"], session, json['updated_by'])
+        return True
 
 class UserInsertSchema(Schema):
     username = fields.String()

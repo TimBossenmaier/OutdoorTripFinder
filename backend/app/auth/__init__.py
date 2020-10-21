@@ -82,7 +82,7 @@ def confirm(token):
         session.close()
         return make_response(jsonify('successfully confirmed', 201))
 
-
+# TODO auf JSON umbauen
 @auth.route('/confirm/<username>')
 def resend_confirmation(username):
 
@@ -121,3 +121,43 @@ def change_password():
         return make_response(jsonify('password successfully changed', 201))
     else:
         return make_response(jsonify('old password is invalid', 422))
+
+
+@auth.route('/reset', methods=['GET', 'POST'])
+def password_reset_request():
+
+    data = request.get_json()
+    session = Session()
+
+    if data.get("username"):
+        user = session.query(User).filter_by(username=data["username"]).first()
+    else:
+        session.close()
+        return make_response(jsonify('No username provided', 422))
+
+    if user is None:
+        session.close()
+        return make_response(jsonify('username does not exist', 422))
+    else:
+        token = user.generate_reset_token()
+        url = url_for('auth.reset', token=token, _external=True)
+        send_email(user.email, 'Reset Your Password', 'auth/email/reset_password',
+                   username=user.username, url=url)
+        session.close()
+        return make_response(jsonify('successfully requested', 201))
+
+
+@auth.route('reset/<token>', methods=['GET', 'POST'])
+def password_reset(token):
+
+    data = request.json()
+    session = Session()
+    if not data.get("password") or not data.get("updated_by"):
+        session.close()
+        return make_response(jsonify('No password provided', 422))
+    elif User.reset_password(session, token, data):
+        session.close()
+        return make_response(jsonify('password successfully reset', 201))
+    else:
+        session.close()
+        return make_response(jsonify('Password reset not possible', 400))
