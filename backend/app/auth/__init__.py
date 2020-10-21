@@ -3,6 +3,7 @@ from sqlalchemy import exc
 import re
 from ..entities.user import User, UserInsertSchema
 from ..entities.entity import Session
+from ..email import send_email
 
 auth = Blueprint('auth', __name__)
 
@@ -45,5 +46,8 @@ def create_user():
         if "email" in affected_attr:
             msg = {"existing": "email"}
             return make_response(jsonify(msg, 422))
+
+    confirmation_token = user.generate_confirmation_token()
+    send_email(user.email, 'Confirm Your Account', 'auth/email/confirm', user=user, token=confirmation_token)
 
     return make_response(jsonify(res, 201))
