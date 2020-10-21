@@ -6,3 +6,4 @@
 ref:
 
  - https://robinislam.me/blog/reading-environment-variables-in-python/
+ - https://realpython.com/python-send-email/

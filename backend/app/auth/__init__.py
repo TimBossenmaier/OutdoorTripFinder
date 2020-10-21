@@ -1,5 +1,5 @@
 import re
-from flask import Blueprint, request, jsonify, make_response, current_app
+from flask import Blueprint, request, jsonify, make_response, current_app, url_for
 from sqlalchemy import exc
 from itsdangerous import TimedJSONWebSignatureSerializer
 from ..entities.user import User, UserInsertSchema
@@ -51,7 +51,9 @@ def create_user():
         session.close()
 
     confirmation_token = user.generate_confirmation_token()
-    send_email(user.email, 'Confirm Your Account', 'auth/email/confirm', user=user, token=confirmation_token)
+    url = url_for('auth.confirm', token=confirmation_token, _external=True)
+    send_email(user.email, 'Confirm Your Account', 'auth/email/confirm',
+               username=user.username, url=url)
 
     return make_response(jsonify(res, 201))
 
@@ -67,13 +69,31 @@ def confirm(token):
 
     session = Session()
     user_id = data.get("confirm")
-    user = session.query(User).filter_by(id == user_id).first()
+    user = session.query(User).filter_by(id=user_id).first()
 
     if user is None:
         session.close()
         return make_response(jsonify({'error': 'token expired or link invalid'}, 422))
     elif user.confirmed:
-        return make_response(jsonify(user, 201))
+        return make_response(jsonify('successfully confirmed', 201))
     else:
         user.confirm(session)
         session.close()
+        return make_response(jsonify('successfully confirmed', 201))
+
+
+@auth.route('/confirm/<username>')
+def resend_confirmation(username):
+
+    session = Session()
+    curr_user = session.query(User).filter_by(username=username).first()
+    session.close()
+
+    if curr_user is not None:
+        new_token = curr_user.generate_confirmation_token()
+        url = url_for('auth.confirm', token=new_token, _external=True)
+        send_email(curr_user.email, 'Confirm Your Account', 'auth/email/confirm',
+                   username=curr_user.username, url=url)
+        return make_response(jsonify('successfully resend', 201))
+    else:
+        return make_response(jsonify('user does not exist'), 422)
