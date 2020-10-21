@@ -42,19 +42,11 @@ class User(Entity, Base):
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
         return s.dumps({'confirm': self.id}).decode('utf-8')
 
-    def confirm(self, token, session):
+    def confirm(self, session):
 
-        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
-
-        try:
-            data = s.loads(token.encode('utf-8'))
-        except:
-            return False
-
-        if data.get('confirm') != self.id:
-            return False
         self.confirmed = True
         session.add(self)
+        session.commit()
 
         return True
 
