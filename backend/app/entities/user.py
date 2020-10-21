@@ -1,6 +1,8 @@
 from marshmallow import fields, Schema
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy import Column, String, Integer,Boolean, ForeignKey
+from itsdangerous import TimedJSONWebSignatureSerializer
+from flask import current_app
 from .entity import Entity, Base
 
 
@@ -10,6 +12,7 @@ class User(Entity, Base):
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String(256))
     role_id = Column(Integer, ForeignKey('roles.id'))
+    confirmed = Column(Boolean, default=False)
 
     def __init__(self, username, email, password, role_id, created_by):
         Entity.__init__(self, created_by)
@@ -30,6 +33,30 @@ class User(Entity, Base):
 
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def generate_confirmation_token(self, expiration=86400):
+        """
+        expiration: 24 h
+        """
+
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'confirm': self.id}).decode('utf-8')
+
+    def confirm(self, token, session):
+
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+
+        try:
+            data = s.loads(token.encode('utf-8'))
+        except:
+            return False
+
+        if data.get('confirm') != self.id:
+            return False
+        self.confirmed = True
+        session.add(self)
+
+        return True
 
 
 class UserInsertSchema(Schema):
