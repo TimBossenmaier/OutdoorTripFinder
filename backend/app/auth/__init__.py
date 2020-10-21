@@ -70,7 +70,9 @@ def confirm(token):
     user = session.query(User).filter_by(id == user_id).first()
 
     if user is None:
+        session.close()
         return make_response(jsonify({'error': 'token expired or link invalid'}, 422))
     else:
         user.confirm(session)
+        session.close()
         return make_response(jsonify(user, 201))
