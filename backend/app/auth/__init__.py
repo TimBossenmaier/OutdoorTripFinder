@@ -72,7 +72,8 @@ def confirm(token):
     if user is None:
         session.close()
         return make_response(jsonify({'error': 'token expired or link invalid'}, 422))
+    elif user.confirmed:
+        return make_response(jsonify(user, 201))
     else:
         user.confirm(session)
         session.close()
-        return make_response(jsonify(user, 201))

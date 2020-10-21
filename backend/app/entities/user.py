@@ -1,8 +1,9 @@
 from marshmallow import fields, Schema
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import Column, String, Integer,Boolean, ForeignKey
+from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 from itsdangerous import TimedJSONWebSignatureSerializer
 from flask import current_app
+from datetime import datetime
 from .entity import Entity, Base
 
 
@@ -26,6 +27,7 @@ class User(Entity, Base):
 
     def create(self, session):
 
+        self.last_updated_by = 'Account Generator'
         session.add(self)
         session.commit()
 
@@ -45,6 +47,8 @@ class User(Entity, Base):
     def confirm(self, session):
 
         self.confirmed = True
+        self.last_updated_by = 'Account Validator'
+        self.updated_at = datetime.now()
         session.add(self)
         session.commit()
 
