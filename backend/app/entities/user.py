@@ -33,6 +33,22 @@ class User(Entity, Base):
 
         return self
 
+    def update(self, session, updated_by, **kwargs):
+        self.updated_at = datetime.now()
+        self.last_updated_by = updated_by
+
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+        session.add(self)
+        session.commit()
+
+    def update_password(self, password, session, updated_by):
+        self.password_hash = generate_password_hash(password)
+
+        self.update(session, updated_by=updated_by)
+
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
 
@@ -41,7 +57,7 @@ class User(Entity, Base):
         expiration: 24 h
         """
 
-        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expires_in=expiration)
         return s.dumps({'confirm': self.id}).decode('utf-8')
 
     def confirm(self, session):

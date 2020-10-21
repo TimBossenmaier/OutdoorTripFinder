@@ -9,6 +9,7 @@ from ..email import send_email
 auth = Blueprint('auth', __name__)
 
 
+# TODO change make_responses strings with enum
 @auth.route('/check_login', methods=['GET', 'POST'])
 def check_login():
 
@@ -21,7 +22,7 @@ def check_login():
         session.close()
     else:
         return make_response(jsonify('No username/email provided', 422))
-    if user is not None and user.password_hash == data["password_hash"]:
+    if user is not None and user.verify_password(data["password"]):
         return make_response(jsonify(True, 201))
     else:
         return make_response(jsonify(False, 201))
@@ -97,3 +98,26 @@ def resend_confirmation(username):
         return make_response(jsonify('successfully resend', 201))
     else:
         return make_response(jsonify('user does not exist'), 422)
+
+
+@auth.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+
+    data = request.get_json()
+    session = Session()
+
+    if data.get("username"):
+        user = session.query(User).filter_by(username=data["username"]).first()
+    else:
+        session.close()
+        return make_response(jsonify('No username provided', 422))
+
+    if user is None:
+        session.close()
+        return make_response(jsonify('username does not exist', 422))
+    elif user.verify_password(data["password_old"]):
+        user.update_password(data["password_new"], session, data["updated_by"])
+        session.close()
+        return make_response(jsonify('password successfully changed', 201))
+    else:
+        return make_response(jsonify('old password is invalid', 422))
