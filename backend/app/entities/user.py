@@ -79,6 +79,11 @@ class User(Entity, Base):
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expires_in=expiration)
         return s.dumps({'reset': self.id}).decode('utf-8')
 
+    def generate_email_token(self, new_email, expiration=86400):
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expiration)
+        return s.dumps({'change_email': self.id, 'new_email': new_email}).decode('utf-8')
+
+    # rework to instance-method
     @staticmethod
     def reset_password(session, token, json):
 
@@ -93,6 +98,26 @@ class User(Entity, Base):
         if user is None:
             return False
         user.update_password(json["password"], session, json[UserAttributes.UPDATED_BY])
+        return True
+
+    def change_email(self, session, token, updated_by):
+
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+
+        try:
+            data = s.loads(token.encode('utf-8'))
+        except:
+            return False
+
+        if data.get('change_email') != self.id:
+            return False
+
+        new_email = data.get('new_email')
+        if new_email is None:
+            return False
+
+        self.update(session, updated_by, email=new_email)
+
         return True
 
 

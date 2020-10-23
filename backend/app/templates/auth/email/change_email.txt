@@ -1,0 +1,9 @@
+Dear {username},
+
+To confirm your new email address click on the following link:
+
+{url}
+
+Sincerely,
+
+The OutdoorTrips Team
