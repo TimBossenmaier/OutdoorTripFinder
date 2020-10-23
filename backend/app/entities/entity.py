@@ -6,6 +6,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from marshmallow import Schema, fields
 from dotenv import load_dotenv
+from enum import Enum
 import os
 
 load_dotenv('../.env')
@@ -50,3 +51,10 @@ class EntitySchema(Schema):
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
     last_updated_by = fields.String()
+
+
+class EntityAttributes(Enum):
+    ID = 'id'
+    CREATED_AT = 'created_at'
+    UPDATED_AT = 'updated_at'
+    UPDATED_BY = 'last_updated_by'
