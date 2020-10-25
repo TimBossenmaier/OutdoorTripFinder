@@ -4,6 +4,7 @@ from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 from itsdangerous import TimedJSONWebSignatureSerializer
 from flask import current_app
 from datetime import datetime
+from enum import Enum
 from .entity import Entity, Base, EntityAttributes, EntitySchema
 from .role import Permission
 
@@ -143,9 +144,13 @@ class UserSchema(EntitySchema):
     role_id = fields.Integer()
 
 
-class UserAttributes(EntityAttributes):
+class UserAttributes(Enum):
     USERNAME = 'username'
     EMAIL = 'email'
     PASSWORD_HASH = 'password_hash'
     ROLE_ID = 'role_id'
     CONFIRMED = 'confirmed'
+    ID = 'id'
+    CREATED_AT = 'created_at'
+    UPDATED_AT = 'updated_at'
+    UPDATED_BY = 'last_updated_by'
