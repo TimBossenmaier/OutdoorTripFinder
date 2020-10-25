@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 from itsdangerous import TimedJSONWebSignatureSerializer
 from flask import current_app
 from datetime import datetime
-from .entity import Entity, Base, EntityAttributes
+from .entity import Entity, Base, EntityAttributes, EntitySchema
 
 
 # TODO: check what can be part of entity (e.g. update())
@@ -129,15 +129,11 @@ class UserInsertSchema(Schema):
     created_by = fields.String()
 
 
-class UserSchema(Schema):
-    id = fields.String()
+class UserSchema(EntitySchema):
     username = fields.String()
     email = fields.String()
     password_hash = fields.String()
     role_id = fields.Integer()
-    created_at = fields.DateTime()
-    updated_at = fields.DateTime()
-    last_updated_by = fields.String()
 
 
 class UserAttributes(EntityAttributes):
@@ -146,4 +142,3 @@ class UserAttributes(EntityAttributes):
     PASSWORD_HASH = 'password_hash'
     ROLE_ID = 'role_id'
     CONFIRMED = 'confirmed'
-
