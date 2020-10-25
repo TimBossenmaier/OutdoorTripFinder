@@ -5,6 +5,7 @@ from itsdangerous import TimedJSONWebSignatureSerializer
 from flask import current_app
 from datetime import datetime
 from .entity import Entity, Base, EntityAttributes, EntitySchema
+from .role import Permission
 
 
 # TODO: check what can be part of entity (e.g. update())
@@ -119,6 +120,12 @@ class User(Entity, Base):
         self.update(session, updated_by, email=new_email)
 
         return True
+
+    def can(self, perm):
+        return self.role is not None and self.role.has_permission(perm)
+
+    def is_admin(self):
+        return self.can(Permission.ADMIN)
 
 
 class UserInsertSchema(Schema):
