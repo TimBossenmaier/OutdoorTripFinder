@@ -15,10 +15,10 @@ def check_login():
 
     data = request.get_json()
     session = Session()
-    if data.get(UserAttributes.USERNAME):
-        user = session.query(User).filter_by(username=data[UserAttributes.USERNAME]).first()
-    elif data.get(UserAttributes.EMAIL):
-        user = session.query(User).filter_by(email=data[UserAttributes.EMAIL]).first()
+    if data.get(str(UserAttributes.USERNAME)):
+        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
+    elif data.get(str(UserAttributes.EMAIL)):
+        user = session.query(User).filter_by(email=data[str(UserAttributes.EMAIL)]).first()
         session.close()
     else:
         return make_response(jsonify('No username/email provided', 422))
@@ -42,11 +42,11 @@ def create_user():
         session.rollback()
         error_detail = ie.orig.args[0]
         affected_attr = str(re.search(r'DETAIL:  Schlüssel »\([a-zA-Z]+\)', error_detail))
-        if UserAttributes.USERNAME in affected_attr:
-            msg = {"existing": UserAttributes.USERNAME}
+        if str(UserAttributes.USERNAME) in affected_attr:
+            msg = {"existing": str(UserAttributes.USERNAME)}
             return make_response(jsonify(msg, 422))
-        if UserAttributes.EMAIL in affected_attr:
-            msg = {"existing": UserAttributes.EMAIL}
+        if str(UserAttributes.EMAIL) in affected_attr:
+            msg = {"existing": str(UserAttributes.EMAIL)}
             return make_response(jsonify(msg, 422))
     finally:
         session.close()
@@ -82,22 +82,31 @@ def confirm(token):
         session.close()
         return make_response(jsonify('successfully confirmed', 201))
 
-# TODO auf JSON umbauen
-@auth.route('/confirm/<username>')
-def resend_confirmation(username):
 
-    session = Session()
-    curr_user = session.query(User).filter_by(username=username).first()
-    session.close()
+# TODO auf JSON umbauen
+@auth.route('/confirm', methods=['GET', 'POST'])
+def resend_confirmation():
+
+    data = request.get_json()
+
+    if data.get(str(UserAttributes.USERNAME)):
+        session = Session()
+        curr_user = session.query(User).filter_by(username=data.get(str(UserAttributes.USERNAME))).first()
+        session.close()
+    else:
+        return make_response(jsonify('username is missing', 422))
 
     if curr_user is not None:
-        new_token = curr_user.generate_confirmation_token()
-        url = url_for('auth.confirm', token=new_token, _external=True)
-        send_email(curr_user.email, 'Confirm Your Account', 'auth/email/confirm',
-                   username=curr_user.username, url=url)
-        return make_response(jsonify('successfully resend', 201))
+        if curr_user.confirmed:
+            return make_response(jsonify('user is already confirmed', 422))
+        else:
+            new_token = curr_user.generate_confirmation_token()
+            url = url_for('auth.confirm', token=new_token, _external=True)
+            send_email(curr_user.email, 'Confirm Your Account', 'auth/email/confirm',
+                       username=curr_user.username, url=url)
+            return make_response(jsonify('successfully resend', 201))
     else:
-        return make_response(jsonify('user does not exist'), 422)
+        return make_response(jsonify('user does not exist', 422))
 
 
 @auth.route('/change_password', methods=['GET', 'POST'])
@@ -106,8 +115,8 @@ def change_password():
     data = request.get_json()
     session = Session()
 
-    if data.get(UserAttributes.USERNAME):
-        user = session.query(User).filter_by(username=data[UserAttributes.USERNAME]).first()
+    if data.get(str(UserAttributes.USERNAME)):
+        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
     else:
         session.close()
         return make_response(jsonify('No username provided', 422))
@@ -116,21 +125,22 @@ def change_password():
         session.close()
         return make_response(jsonify('username does not exist', 422))
     elif user.verify_password(data["password_old"]):
-        user.update_password(data["password_new"], session, data[UserAttributes.UPDATED_BY])
+        user.update_password(data["password_new"], session, data[str(UserAttributes.UPDATED_BY)])
         session.close()
         return make_response(jsonify('password successfully changed', 201))
     else:
+        session.close()
         return make_response(jsonify('old password is invalid', 422))
 
 
-@auth.route('/reset', methods=['GET', 'POST'])
+@auth.route('/reset_cred', methods=['GET', 'POST'])
 def password_reset_request():
 
     data = request.get_json()
     session = Session()
 
-    if data.get(UserAttributes.USERNAME):
-        user = session.query(User).filter_by(username=data[UserAttributes.USERNAME]).first()
+    if data.get(str(UserAttributes.USERNAME)):
+        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
     else:
         session.close()
         return make_response(jsonify('No username provided', 422))
@@ -140,7 +150,7 @@ def password_reset_request():
         return make_response(jsonify('username does not exist', 422))
     else:
         token = user.generate_reset_token()
-        url = url_for('auth.reset', token=token, _external=True)
+        url = url_for('auth.password_reset', token=token, _external=True)
         send_email(user.email, 'Reset Your Password', 'auth/email/reset_password',
                    username=user.username, url=url)
         session.close()
@@ -150,9 +160,9 @@ def password_reset_request():
 @auth.route('reset/<token>', methods=['GET', 'POST'])
 def password_reset(token):
 
-    data = request.json()
+    data = request.get_json()
     session = Session()
-    if not data.get("password") or not data.get(UserAttributes.UPDATED_BY):
+    if not data.get("password") or not data.get(str(UserAttributes.UPDATED_BY)):
         session.close()
         return make_response(jsonify('No password provided', 422))
     elif User.reset_password(session, token, data):
@@ -169,8 +179,8 @@ def change_email_request():
     data = request.get_json()
     session = Session()
 
-    if data.get(UserAttributes.USERNAME):
-        user = session.query(User).filter_by(username=data[UserAttributes.USERNAME])
+    if data.get(str(UserAttributes.USERNAME)):
+        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
     else:
         session.close()
         return make_response(jsonify('no username provided', 422))
@@ -178,13 +188,14 @@ def change_email_request():
     if user is None:
         session.close()
         return make_response(jsonify('username does not exist', 422))
-    elif user.email == data.get("email_new"):
-        return make_response(jsonify("given email is old email"), 422)
+    elif user.email == data.get(str(UserAttributes.EMAIL)):
+        return make_response(jsonify("given email is old email", 422))
     else:
-        email_token = user.generate_email_token(data["email_new"])
+        email_token = user.generate_email_token(data[str(UserAttributes.EMAIL)],
+                                                data.get(str(UserAttributes.USERNAME)))
         url = url_for('auth.change_email', token=email_token, _external=True)
-        send_email(data.get("email_new"), 'Confirm Your Email Address', 'auth/email/change_email',
-                   username=data[UserAttributes.USERNAME], url=url)
+        send_email(data.get(str(UserAttributes.EMAIL)), 'Confirm Your Email Address', 'auth/email/change_email',
+                   username=data.get(str(UserAttributes.USERNAME)), url=url)
         session.close()
         return make_response(jsonify('successfully requested', 201))
 
@@ -192,11 +203,11 @@ def change_email_request():
 @auth.route('/change_email/<token>')
 def change_email(token):
 
-    data = request.json()
+    new_email, username, user_id = User.resolve_email_token(token)
     session = Session()
 
-    if data.get(UserAttributes.USERNAME):
-        user = session.query(User).filter_by(username=data[UserAttributes.USERNAME])
+    if username is not None:
+        user = session.query(User).filter_by(username=username).first()
     else:
         session.close()
         return make_response(jsonify('no username provided', 422))
@@ -204,7 +215,7 @@ def change_email(token):
     if user is None:
         session.close()
         return make_response(jsonify('username does not exist', 422))
-    elif user.change_email(session, token, data[UserAttributes.UPDATED_BY]):
+    elif user.change_email(session, new_email, user_id, username):
         session.close()
         return make_response(jsonify('successfully changed email'), 201)
     else:

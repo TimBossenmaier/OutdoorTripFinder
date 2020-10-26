@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 from itsdangerous import TimedJSONWebSignatureSerializer
 from flask import current_app
 from datetime import datetime
-from enum import Enum
+from enum import Enum,auto
 from .entity import Entity, Base, EntitySchema
 from .role import Permission
 
@@ -81,9 +81,9 @@ class User(Entity, Base):
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expires_in=expiration)
         return s.dumps({'reset': self.id}).decode('utf-8')
 
-    def generate_email_token(self, new_email, expiration=86400):
+    def generate_email_token(self, new_email, username, expiration=86400):
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expiration)
-        return s.dumps({'change_email': self.id, 'new_email': new_email}).decode('utf-8')
+        return s.dumps({'change_email': self.id, 'email': new_email, 'username': username}).decode('utf-8')
 
     @staticmethod
     def reset_password(session, token, json):
@@ -98,23 +98,28 @@ class User(Entity, Base):
         user = session.query(User).get(data.get('reset'))
         if user is None:
             return False
-        user.update_password(json["password"], session, json[UserAttributes.UPDATED_BY])
+        user.update_password(json["password"], session, json[str(UserAttributes.UPDATED_BY)])
         return True
 
-    def change_email(self, session, token, updated_by):
+    @staticmethod
+    def resolve_email_token(token):
 
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
 
         try:
             data = s.loads(token.encode('utf-8'))
         except:
-            return False
+            return None, None, None
 
-        if data.get('change_email') != self.id:
-            return False
+        new_email = data.get(str(UserAttributes.EMAIL))
+        username = data.get(str(UserAttributes.USERNAME))
+        user_id = data.get('change_email')
 
-        new_email = data.get('new_email')
-        if new_email is None:
+        return new_email, username, user_id
+
+    def change_email(self, session, new_email, user_id, updated_by):
+
+        if user_id != self.id:
             return False
 
         self.update(session, updated_by, email=new_email)
@@ -153,3 +158,6 @@ class UserAttributes(Enum):
     CREATED_AT = 'created_at'
     UPDATED_AT = 'updated_at'
     UPDATED_BY = 'last_updated_by'
+
+    def __str__(self):
+        return str(self.value)

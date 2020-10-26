@@ -51,7 +51,7 @@ class Role(Entity, Base):
             role = session.query(Role).filter_by(name=r).first()
 
             if role is None:
-                role = Role(name=r, default=[True if r == default_role else False], permissions=0,
+                role = Role(name=r, default=[True if r == default_role else False][0], permissions=0,
                             created_by=' DB Initializer')
             for perm in roles[r]:
                 role.add_permission(perm)

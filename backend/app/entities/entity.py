@@ -26,11 +26,12 @@ else:
     engine = create_engine('postgresql://{}:{}@{}/{}'.format(os.environ.get('DEV_DATABASE_USER'),
                                                              os.environ.get('DEV_DATABASE_PASSWORD'),
                                                              os.environ.get('DEV_DATABASE_HOST'),
-                                                             os.environ.get('DEV_DATABASE_NAME')))
+                                                              os.environ.get('DEV_DATABASE_NAME')))
 
 Session = sessionmaker(bind=engine)
 
 Base = declarative_base()
+Base.metadata.create_all(engine)
 
 
 class Entity:
