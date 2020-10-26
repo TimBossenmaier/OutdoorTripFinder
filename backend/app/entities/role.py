@@ -2,6 +2,7 @@ from .entity import Entity, EntitySchema, Base
 from marshmallow import fields
 from sqlalchemy import Column, String, Boolean, Integer
 from sqlalchemy.orm import relationship
+from enum import Enum
 
 
 class Role(Entity, Base):
@@ -72,3 +73,16 @@ class Permission:
     COMMENT = 8
     CREATE = 16
     ADMIN = 32
+
+
+class RoleAttributes(Enum):
+    NAME = 'name'
+    DEFAULT = 'default'
+    PERMISSIONS = 'permissions'
+    ID = 'id'
+    CREATED_AT = 'created_at'
+    UPDATED_AT = 'updated_at'
+    UPDATED_BY = 'last_updated_by'
+
+    def __str__(self):
+        return str(self.value)

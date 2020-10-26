@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 from itsdangerous import TimedJSONWebSignatureSerializer
 from flask import current_app
 from datetime import datetime
-from enum import Enum,auto
+from enum import Enum
 from .entity import Entity, Base, EntitySchema
 from .role import Permission
 
