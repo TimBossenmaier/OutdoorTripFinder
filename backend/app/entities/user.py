@@ -5,7 +5,7 @@ from itsdangerous import TimedJSONWebSignatureSerializer
 from flask import current_app
 from datetime import datetime
 from enum import Enum
-from .entity import Entity, Base, EntityAttributes, EntitySchema
+from .entity import Entity, Base, EntitySchema
 from .role import Permission
 
 
@@ -85,7 +85,6 @@ class User(Entity, Base):
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expiration)
         return s.dumps({'change_email': self.id, 'new_email': new_email}).decode('utf-8')
 
-    # rework to instance-method
     @staticmethod
     def reset_password(session, token, json):
 
