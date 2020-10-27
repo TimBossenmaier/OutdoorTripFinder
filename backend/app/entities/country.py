@@ -39,6 +39,7 @@ class Country(Entity, Base):
 
 class CountrySchema(EntitySchema):
     name = fields.String()
+    last_updated_by = fields.Integer()
 
 
 class CountryInsertSchema(Schema):
@@ -49,6 +50,9 @@ class CountryInsertSchema(Schema):
 class CountryAttributes(Enum):
     NAME = 'name'
     LAST_UPDATED_BY = 'last_updated_by'
+    ID = 'id'
+    CREATED_AT = 'created_at'
+    UPDATED_AT = 'updated_at'
 
     def __str__(self):
         return str(self.value)
