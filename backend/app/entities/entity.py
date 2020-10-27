@@ -53,6 +53,24 @@ class Entity:
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
 
+    def create(self, session):
+
+        session.add(self)
+        session.commit()
+
+        return self
+
+    def update(self, session, updated_by, **kwargs):
+        self.updated_at = datetime.now()
+        self.last_updated_by = updated_by
+
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+        session.add(self)
+        session.commit()
+
 
 class EntitySchema(Schema):
     id = fields.Integer()
