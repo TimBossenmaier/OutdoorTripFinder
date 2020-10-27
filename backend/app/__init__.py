@@ -3,7 +3,7 @@ from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
-from .head import app_main as main_blueprint
+from .head import main as main_blueprint
 from .auth import auth as auth_blueprint
 from config import config
 
@@ -23,7 +23,7 @@ def create_app(config_name):
     moment.init_app(app)
     db.init_app(app)
 
-    app.register_blueprint(main_blueprint)
+    app.register_blueprint(main_blueprint, url_prefix='/main')
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
     return app

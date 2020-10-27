@@ -40,36 +40,10 @@ class Entity:
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False, onupdate=datetime.now())
 
-    @declared_attr
-    def last_updated_by(cls):
-        Column(Integer, ForeignKey('users.id'), nullable=False)
-
-    def __init__(self, created_by):
-        self.created_at = datetime.now()
-        self.updated_at = datetime.now()
-        self.last_updated_by = created_by
-
     def __init__(self):
+
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
-
-    def create(self, session):
-
-        session.add(self)
-        session.commit()
-
-        return self
-
-    def update(self, session, updated_by, **kwargs):
-        self.updated_at = datetime.now()
-        self.last_updated_by = updated_by
-
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-
-        session.add(self)
-        session.commit()
 
 
 class EntitySchema(Schema):

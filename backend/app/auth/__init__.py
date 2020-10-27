@@ -1,6 +1,6 @@
 import re
 from flask import Blueprint, request, jsonify, make_response, current_app, url_for
-from sqlalchemy import exc
+from sqlalchemy.exc import IntegrityError
 from itsdangerous import TimedJSONWebSignatureSerializer
 from ..entities.user import User, UserInsertSchema, UserAttributes
 from ..entities.entity import Session
@@ -38,7 +38,7 @@ def create_user():
     user = User(**user_schema.load(data))
     try:
         res = user_schema.dump(user.create(session))
-    except exc.IntegrityError as ie:
+    except IntegrityError as ie:
         session.rollback()
         session.close()
         error_detail = ie.orig.args[0]

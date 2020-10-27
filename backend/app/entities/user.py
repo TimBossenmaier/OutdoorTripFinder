@@ -9,7 +9,6 @@ from .entity import Entity, Base, EntitySchema
 from .role import Permission
 
 
-# TODO: check what can be part of entity (e.g. update())
 class User(Entity, Base):
     __tablename__ = 'users'
     username = Column(String, unique=True, nullable=False)
@@ -37,6 +36,17 @@ class User(Entity, Base):
         session.commit()
 
         return self
+
+    def update(self, session, updated_by, **kwargs):
+        self.updated_at = datetime.now()
+        self.last_updated_by = updated_by
+
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+        session.add(self)
+        session.commit()
 
     def update_password(self, password, session, updated_by):
         self.password_hash = generate_password_hash(password)
