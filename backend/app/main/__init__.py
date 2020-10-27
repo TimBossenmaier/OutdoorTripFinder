@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from ..entities.entity import Session
 from ..entities.user import UserAttributes, User, Permission
 from ..entities.country import CountryInsertSchema, Country
+from ..main.error_handling import investigate_integrity_error
 
 main = Blueprint('main', __name__)
 
@@ -33,9 +34,11 @@ def create_country():
             res = country_schema.dump(country.create(session))
 
         except IntegrityError as ie:
-            print(ie)
             session.rollback()
             session.close()
+            msg = investigate_integrity_error(ie)
+            if msg is not None:
+                return make_response(jsonify(msg), 422)
 
         finally:
             session.close()

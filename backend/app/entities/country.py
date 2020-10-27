@@ -10,7 +10,7 @@ from .entity import Entity, EntitySchema, Base, Session
 class Country(Entity, Base):
     __tablename__ = 'countries'
 
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=False, unique=True)
     last_updated_by = Column(Integer, ForeignKey('users.id'), nullable=False)
 
     def __init__(self, name, created_by):
@@ -48,6 +48,7 @@ class CountryInsertSchema(Schema):
 
 class CountryAttributes(Enum):
     NAME = 'name'
+    LAST_UPDATED_BY = 'last_updated_by'
 
     def __str__(self):
         return str(self.value)

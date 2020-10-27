@@ -1,10 +1,10 @@
-import re
 from flask import Blueprint, request, jsonify, make_response, current_app, url_for
 from sqlalchemy.exc import IntegrityError
 from itsdangerous import TimedJSONWebSignatureSerializer
 from ..entities.user import User, UserInsertSchema, UserAttributes
 from ..entities.entity import Session
 from ..email import send_email
+from ..main.error_handling import investigate_integrity_error
 
 auth = Blueprint('auth', __name__)
 
@@ -41,14 +41,9 @@ def create_user():
     except IntegrityError as ie:
         session.rollback()
         session.close()
-        error_detail = ie.orig.args[0]
-        affected_attr = str(re.search(r'DETAIL:  Schlüssel »\([a-zA-Z]+\)', error_detail))
-        if str(UserAttributes.USERNAME) in affected_attr:
-            msg = {"existing": str(UserAttributes.USERNAME)}
-            return make_response(jsonify(msg, 422))
-        if str(UserAttributes.EMAIL) in affected_attr:
-            msg = {"existing": str(UserAttributes.EMAIL)}
-            return make_response(jsonify(msg, 422))
+        msg = investigate_integrity_error(ie)
+        if msg is not None:
+            return make_response(jsonify(msg), 422)
     finally:
         session.close()
 
