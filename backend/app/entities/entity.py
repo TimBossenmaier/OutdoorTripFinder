@@ -1,8 +1,8 @@
 # coding=utf-8
 
 from datetime import datetime
-from sqlalchemy import create_engine, Column, String, Integer, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine, Column, Integer, DateTime, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import sessionmaker
 from marshmallow import Schema, fields
 from dotenv import load_dotenv
@@ -26,7 +26,7 @@ else:
     engine = create_engine('postgresql://{}:{}@{}/{}'.format(os.environ.get('DEV_DATABASE_USER'),
                                                              os.environ.get('DEV_DATABASE_PASSWORD'),
                                                              os.environ.get('DEV_DATABASE_HOST'),
-                                                              os.environ.get('DEV_DATABASE_NAME')))
+                                                             os.environ.get('DEV_DATABASE_NAME')))
 
 Session = sessionmaker(bind=engine)
 
@@ -39,12 +39,19 @@ class Entity:
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False, onupdate=datetime.now())
-    last_updated_by = Column(String, nullable=False)
+
+    @declared_attr
+    def last_updated_by(cls):
+        Column(Integer, ForeignKey('users.id'), nullable=False)
 
     def __init__(self, created_by):
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.last_updated_by = created_by
+
+    def __init__(self):
+        self.created_at = datetime.now()
+        self.updated_at = datetime.now()
 
 
 class EntitySchema(Schema):

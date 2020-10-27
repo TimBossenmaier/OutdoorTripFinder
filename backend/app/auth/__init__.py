@@ -40,6 +40,7 @@ def create_user():
         res = user_schema.dump(user.create(session))
     except exc.IntegrityError as ie:
         session.rollback()
+        session.close()
         error_detail = ie.orig.args[0]
         affected_attr = str(re.search(r'DETAIL:  Schlüssel »\([a-zA-Z]+\)', error_detail))
         if str(UserAttributes.USERNAME) in affected_attr:
@@ -83,7 +84,6 @@ def confirm(token):
         return make_response(jsonify('successfully confirmed', 201))
 
 
-# TODO auf JSON umbauen
 @auth.route('/confirm', methods=['GET', 'POST'])
 def resend_confirmation():
 

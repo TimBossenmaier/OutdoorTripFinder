@@ -17,13 +17,15 @@ class User(Entity, Base):
     password_hash = Column(String(256))
     role_id = Column(Integer, ForeignKey('roles.id'))
     confirmed = Column(Boolean, default=False)
+    last_updated_by = Column(String, nullable=False)
 
     def __init__(self, username, email, password, role_id, created_by):
-        Entity.__init__(self, created_by)
+        Entity.__init__(self)
         self.username = username
         self.email = email
         self.password_hash = generate_password_hash(password)
         self.role_id = role_id
+        self.last_updated_by = created_by
 
     def __repr__(self):
         return '<User %r>' % self.username
