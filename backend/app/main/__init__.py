@@ -3,7 +3,8 @@ from sqlalchemy.exc import IntegrityError
 
 from ..entities.entity import Session
 from ..entities.user import UserAttributes, User, Permission
-from ..entities.country import CountryInsertSchema, Country, CountryAttributes, CountrySchema
+from ..entities.country import Country
+from ..entities.region import Region
 from ..main.error_handling import investigate_integrity_error
 from ..utils import responses
 from ..utils.responses import create_json_response, ResponseMessages
@@ -112,7 +113,7 @@ def update(req, class_type):
         return resp
 
     if user is not None and user.can(Permission.CREATE):
-        entity = session.query(class_type).filter_by(id=data.get(str(CountryAttributes.ID))).first()
+        entity = session.query(class_type).filter_by(id=data.get(str(class_type.get_attributes().ID))).first()
         if entity is not None:
 
             try:
@@ -147,7 +148,7 @@ def update(req, class_type):
                                                           user_data), 403))
 
 
-def list(class_type):
+def list_all(class_type):
 
     session = Session()
 
@@ -175,6 +176,14 @@ def create_country():
     return resp
 
 
+@main.route('create/region', methods=['GET', 'POST'])
+def create_region():
+
+    resp = create(request, Region)
+
+    return resp
+
+
 @main.route('/update/country', methods=['GET', 'POST'])
 def update_country():
 
@@ -183,9 +192,24 @@ def update_country():
     return resp
 
 
+@main.route('update/region', methods=['GET', 'POST'])
+def update_region():
+
+    res = update(request, Region)
+
+    return res
+
 @main.route('/list/country', methods=['GET'])
 def list_country():
 
-    res = list(Country)
+    res = list_all(Country)
+
+    return res
+
+
+@main.route('list/region', methods=['GET'])
+def list_region():
+
+    res = list_all(Region)
 
     return res
