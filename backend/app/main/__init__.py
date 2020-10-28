@@ -5,6 +5,7 @@ from ..entities.entity import Session
 from ..entities.user import UserAttributes, User, Permission
 from ..entities.country import Country
 from ..entities.region import Region
+from ..entities.location_type import LocationType
 from ..main.error_handling import investigate_integrity_error
 from ..utils import responses
 from ..utils.responses import create_json_response, ResponseMessages
@@ -184,6 +185,14 @@ def create_region():
     return resp
 
 
+@main.route('/create/location_type', methods=['GET', 'POST'])
+def create_location_type():
+
+    resp = create(request, LocationType)
+
+    return resp
+
+
 @main.route('/update/country', methods=['GET', 'POST'])
 def update_country():
 
@@ -199,6 +208,15 @@ def update_region():
 
     return res
 
+
+@main.route('update/location_type', methods=['GET', 'POST'])
+def update_location_type():
+
+    res = update(request, LocationType)
+
+    return res
+
+
 @main.route('/list/country', methods=['GET'])
 def list_country():
 
@@ -211,5 +229,13 @@ def list_country():
 def list_region():
 
     res = list_all(Region)
+
+    return res
+
+
+@main.route('list/location_type', methods=['GET'])
+def list_location_type():
+
+    res = list_all(LocationType)
 
     return res
