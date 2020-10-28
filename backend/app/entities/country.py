@@ -36,6 +36,22 @@ class Country(Entity, Base):
         session.add(self)
         session.commit()
 
+    @staticmethod
+    def get_insert_schema():
+        return CountryInsertSchema()
+
+    @staticmethod
+    def get_schema(many, only):
+        return CountrySchema(many=many, only=only)
+
+    @staticmethod
+    def get_attributes():
+        return CountryAttributes
+
+    def convert_to_insert_schema(self):
+        schema = CountryInsertSchema()
+        return schema.dump(self)
+
 
 class CountrySchema(EntitySchema):
     name = fields.String()

@@ -15,12 +15,15 @@ def get_main_app():
     return main
 
 
-@main.route('/create/country', methods=['GET', 'POST'])
-def create_country():
+def extract_json_data(req, class_type):
+    user_data = req.get_json()["user"]
+    data = req.get_json()[class_type.__name__.lower()]
 
-    user_data = request.get_json()['user']
-    country_data = request.get_json()['country']
-    session = Session()
+    return user_data, data
+
+
+def extract_user(user_data, session, class_type):
+
     if user_data.get(str(UserAttributes.USERNAME)):
         user = session.query(User).filter_by(username=user_data.get(str(UserAttributes.USERNAME))).first()
     else:
@@ -28,22 +31,59 @@ def create_country():
         return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
                                                           ResponseMessages.CREATE_MISSING_PARAM,
                                                           user_data,
-                                                          Country.__name__), 422))
+                                                          class_type.__name__), 422))
+
+    return user
+
+
+def check_integrity_error(ie, session, class_type):
+
+    session.rollback()
+    session.close()
+
+    msg = investigate_integrity_error(ie)
+    if msg is not None:
+        return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
+                                                          ResponseMessages.CREATE_DUPLICATE_PARAMS,
+                                                          msg,
+                                                          class_type.__name__), 422))
+
+    else:
+        return None
+
+
+def create(req, class_type):
+
+    user_data, data = extract_json_data(req, class_type)
+
+    session = Session()
+
+    expected_user = extract_user(user_data, session, class_type)
+
+    if isinstance(expected_user, User):
+        user = expected_user
+    else:
+        resp = expected_user
+        return resp
 
     if user is not None and user.can(Permission.CREATE):
-        country_data.update({'created_by': user.id})
-        country_schema = CountryInsertSchema()
-        country = Country(**country_schema.load(country_data))
+        data.update({'created_by': user.id})
+        schema = class_type.get_insert_schema()
+
+        class_instance = class_type(**schema.load(data))
 
         try:
-            res = country_schema.dump(country.create(session))
+            res = schema.dump(class_instance.create(session))
 
         except IntegrityError as ie:
-            session.rollback()
-            session.close()
-            msg = investigate_integrity_error(ie)
-            if msg is not None:
-                return make_response(jsonify(msg), 422)
+
+            check_result = check_integrity_error(ie, session, class_type)
+
+            if check_result is None:
+                pass
+            else:
+                resp = check_result
+                return resp
 
         finally:
             session.close()
@@ -51,53 +91,55 @@ def create_country():
         return make_response(jsonify(create_json_response(responses.SUCCESS_201,
                                                           ResponseMessages.CREATE_SUCCESS,
                                                           res,
-                                                          Country.__name__), 201))
+                                                          class_type.__name__), 201))
     else:
         return make_response(jsonify(create_json_response(responses.UNAUTHORIZED_403,
                                                           ResponseMessages.CREATE_NOT_AUTHORIZED,
                                                           user_data), 403))
 
 
-@main.route('/update/country', methods=['GET', 'POST'])
-def update_country():
+def update(req, class_type):
 
-    user_data = request.get_json()['user']
-    country_data = request.get_json()['country']
+    user_data, data = extract_json_data(req, class_type)
+
     session = Session()
-    if user_data.get(str(UserAttributes.USERNAME)):
-        user = session.query(User).filter_by(username=user_data.get(str(UserAttributes.USERNAME))).first()
+    expected_user = extract_user(user_data, session, class_type)
+
+    if isinstance(expected_user, User):
+        user = expected_user
     else:
-        session.close()
-        return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
-                                                          ResponseMessages.UPDATE_MISSING_PARAM,
-                                                          user_data,
-                                                          Country.__name__), 422))
+        resp = expected_user
+        return resp
 
     if user is not None and user.can(Permission.CREATE):
-        country = session.query(Country).filter_by(id=country_data.get(str(CountryAttributes.ID))).first()
-        if country is not None:
+        entity = session.query(class_type).filter_by(id=data.get(str(CountryAttributes.ID))).first()
+        if entity is not None:
 
             try:
-                country.update(session, user.id, **country_data)
+                entity.update(session, user.id, **data)
             except IntegrityError as ie:
-                session.rollback()
-                session.close()
-                msg = investigate_integrity_error(ie)
-                if msg is not None:
-                    return make_response(jsonify(msg), 422)
+
+                check_result = check_integrity_error(ie, session, class_type)
+
+                if check_result is None:
+                    pass
+                else:
+                    resp = check_result
+                    return resp
 
             finally:
-                session.close()
+                    res = entity.convert_to_insert_schema()
+                    session.close()
             return make_response(jsonify(create_json_response(responses.SUCCESS_200,
                                                               ResponseMessages.UPDATE_SUCCESS,
-                                                              country,
-                                                              Country.__name__), 200))
+                                                              res,
+                                                              class_type.__name__), 200))
         else:
             session.close()
             return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
                                                               ResponseMessages.UPDATE_FAILED,
-                                                              country_data,
-                                                              Country.__name__), 422))
+                                                              data,
+                                                              class_type.__name__), 422))
     else:
         session.close()
         return make_response(jsonify(create_json_response(responses.UNAUTHORIZED_403,
@@ -105,21 +147,45 @@ def update_country():
                                                           user_data), 403))
 
 
-@main.route('/discover/country', methods=['GET'])
-def list_country():
+def list(class_type):
 
     session = Session()
 
-    res = session.query(Country).all()
+    res = session.query(class_type).all()
     if res is None:
         return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
                                                           ResponseMessages.LIST_EMPTY,
                                                           None,
-                                                          Country.__name__), 422))
-    schema = CountrySchema(many=True, only=(str(CountryAttributes.NAME), str(CountryAttributes.ID)))
-    countries = schema.dump(res)
+                                                          class_type.__name__), 422))
+    attributes = class_type.get_attributes()
+    schema = class_type.get_schema(many=True, only=(str(attributes.NAME), str(attributes.ID)))
+    entities = schema.dump(res)
 
     return make_response(jsonify(create_json_response(responses.SUCCESS_200,
                                                       ResponseMessages.LIST_SUCCESS,
-                                                      countries,
+                                                      entities,
                                                       Country.__name__), 200))
+
+
+@main.route('/create/country', methods=['GET', 'POST'])
+def create_country():
+
+    resp = create(request, Country)
+
+    return resp
+
+
+@main.route('/update/country', methods=['GET', 'POST'])
+def update_country():
+
+    resp = update(request, Country)
+
+    return resp
+
+
+@main.route('/list/country', methods=['GET'])
+def list_country():
+
+    res = list(Country)
+
+    return res
