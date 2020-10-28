@@ -2,48 +2,41 @@
 Standard class of HTTP responses
 """
 
-from flask import make_response, jsonify
+from enum import Enum
 
 INVALID_FIELD_NAME_SENT_422 = {
     "http_code": 422,
-    "code": "invalidField",
-    "message": "Invalid fields found"
+    "code": "invalidField"
 }
 
 INVALID_INPUT_422 = {
     "http_code": 422,
-    "code": "invalidInput",
-    "message": "Invalid input"
+    "code": "invalidInput"
 }
 
 MISSING_PARAMETER_422 = {
     "http_code": 422,
-    "code": "missingParameter",
-    "message": "Missing parameter"
+    "code": "missingParameter"
 }
 
 BAD_REQUEST_400 = {
     "http_code": 400,
-    "code": "badRequest",
-    "message": "Bad request"
+    "code": "badRequest"
 }
 
 SERVER_ERROR_500 = {
     "http_code": 500,
-    "code": "serverError",
-    "message": "Server error"
+    "code": "serverError"
 }
 
 SERVER_ERROR_404 = {
     "http_code": 404,
-    "code": "notFound",
-    "message": "Resource not found"
+    "code": "notFound"
 }
 
 UNAUTHORIZED_403 = {
     "http_code": 403,
-    "code": "notAuthorized",
-    "message": "You are not authorised to execute this."
+    "code": "notAuthorized"
 }
 
 SUCCESS_200 = {
@@ -62,36 +55,44 @@ SUCCESS_204 = {
 }
 
 
-def response_with(response, value=None, message=None, error=None, headers={}, pagination=None):
-    """
-    defines a standard answer of the endpoint
-    :param response:
-    :param value:
-    :param message:
-    :param error:
-    :param headers: http-header
-    :param pagination:
-    :return: answer message as JSON
-    """
+def create_json_response(http_resp, message, data, classname=""):
 
-    result = {}
+    http_resp.update({'message': str(message).format(classname)})
+    http_resp.update({'data': data})
 
-    if value is not None:
-        result.update(value)
+    return http_resp
 
-    if response.get('message', None) is not None:
-        result.update({'message': response['message']})
 
-    result.update({'code': response['code']})
+class ResponseMessages(Enum):
+    AUTH_USERNAME_NOT_PROVIDED = "[auth] no username provided"
+    AUTH_LOGIN_SUCCESSFUL = "[auth] login successful"
+    AUTH_LOGIN_FAILED = "[auth] login failed"
+    AUTH_USER_CREATED = "[auth] user successful created"
+    AUTH_DUPLICATE_PARAMS = "[auth] user params already exist"
+    AUTH_TOKEN_INVALID = "[auth] token invalid"
+    AUTH_USER_CONFIRMED = "[auth] user successfully confirmed"
+    AUTH_ALREADY_CONFIRMED = "[auth] user already confirmed"
+    AUTH_CONFIRMATION_RESEND = "[auth] user confirmation resend"
+    AUTH_INVALID_PARAMS = "[auth] invalid params"
+    AUTH_PASSWORD_CHANGED = "[auth] password changed"
+    AUTH_WRONG_PASSWORD = "[auth] old password is incorrect"
+    AUTH_PW_REQUESTED = "[auth] password reset requested"
+    AUTH_PASSWORD_NOT_PROVIDED = "[auth] no new password provided"
+    AUTH_RESET_SUCCESSFUL = "[auth] password reset successful"
+    AUTH_RESET_FAILED = "[auth] password reset failed"
+    AUTH_EMAIL_EXISTS = "[auth] new email equals old email"
+    AUTH_EMAIL_REQUESTED = "[auth] change email requested"
+    AUTH_EMAIL_CHANGED = "[auth] email change successful"
+    AUTH_EMAIL_FAILED = "[auth] email change failed"
+    CREATE_SUCCESS = "[create] {}} successful"
+    CREATE_MISSING_PARAM = "[create] {}, missing parameter"
+    CREATE_NOT_AUTHORIZED = "[create] no permission"
+    UPDATE_SUCCESS = "[update] {} successful"
+    UPDATE_FAILED = "[update] {} failed"
+    UPDATE_MISSING_PARAM = "[update] {}, missing parameter"
+    UPDATE_NOT_AUTHORIZED = "[update] no permission"
+    LIST_SUCCESS = "[list] {} successful"
+    LIST_EMPTY = "[list] {} empty"
 
-    if error is not None:
-        result.update({'errors': error})
-
-    if pagination is not None:
-        result.update({'pagination': pagination})
-
-    headers.update({'Access-Control-Allow-Origin': '*'})
-    headers.update({'server': 'Tour Finder API'})
-
-    return make_response(jsonify(result), response['http_code'], headers)
-
+    def __str__(self):
+        return self.value
