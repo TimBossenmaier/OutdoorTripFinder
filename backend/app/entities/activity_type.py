@@ -47,7 +47,7 @@ class ActivityType(Entity, Base):
 
     @staticmethod
     def get_attributes():
-        ActivityTypeAttributes
+        return ActivityTypeAttributes
 
     def convert_to_insert_schema(self):
         schema = ActivityTypeInsertSchema()
