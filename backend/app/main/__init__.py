@@ -1,4 +1,5 @@
-from flask import Blueprint, request, make_response, jsonify
+from flask import Blueprint, request, make_response
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from ..entities.entity import Session
@@ -13,7 +14,7 @@ from ..entities.location import Location
 from ..main.error_handling import investigate_integrity_error
 from ..utils import responses
 from ..utils.responses import create_json_response, ResponseMessages
-from  ..utils.helpers import distance_between_coordinates, sort_by_dist
+from ..utils.helpers import distance_between_coordinates, sort_by_dist
 
 main = Blueprint('main', __name__)
 
@@ -30,37 +31,34 @@ def extract_json_data(req, class_type):
 
 
 def extract_user(user_data, session, class_type):
-
     if user_data.get(str(UserAttributes.USERNAME)):
         user = session.query(User).filter_by(username=user_data.get(str(UserAttributes.USERNAME))).first()
     else:
         session.close()
-        return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
-                                                          ResponseMessages.CREATE_MISSING_PARAM,
-                                                          user_data,
-                                                          class_type.__name__), 422))
+        return make_response(create_json_response(responses.MISSING_PARAMETER_422,
+                                                  ResponseMessages.CREATE_MISSING_PARAM,
+                                                  user_data,
+                                                  class_type.__name__), 422)
 
     return user
 
 
 def check_integrity_error(ie, session, class_type):
-
     session.rollback()
     session.close()
 
     msg = investigate_integrity_error(ie)
     if msg is not None:
-        return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
-                                                          ResponseMessages.CREATE_DUPLICATE_PARAMS,
-                                                          msg,
-                                                          class_type.__name__), 422))
+        return make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                  ResponseMessages.CREATE_DUPLICATE_PARAMS,
+                                                  msg,
+                                                  class_type.__name__), 422)
 
     else:
         return None
 
 
 def create(req, class_type):
-
     user_data, data = extract_json_data(req, class_type)
 
     session = Session()
@@ -95,18 +93,17 @@ def create(req, class_type):
         finally:
             session.close()
 
-        return make_response(jsonify(create_json_response(responses.SUCCESS_201,
-                                                          ResponseMessages.CREATE_SUCCESS,
-                                                          res,
-                                                          class_type.__name__), 201))
+        return make_response(create_json_response(responses.SUCCESS_201,
+                                                  ResponseMessages.CREATE_SUCCESS,
+                                                  res,
+                                                  class_type.__name__), 201)
     else:
-        return make_response(jsonify(create_json_response(responses.UNAUTHORIZED_403,
-                                                          ResponseMessages.CREATE_NOT_AUTHORIZED,
-                                                          user_data), 403))
+        return make_response(create_json_response(responses.UNAUTHORIZED_403,
+                                                  ResponseMessages.CREATE_NOT_AUTHORIZED,
+                                                  user_data), 403)
 
 
 def update(req, class_type):
-
     user_data, data = extract_json_data(req, class_type)
 
     session = Session()
@@ -135,48 +132,46 @@ def update(req, class_type):
                     return resp
 
             finally:
-                    res = entity.convert_to_insert_schema()
-                    session.close()
-            return make_response(jsonify(create_json_response(responses.SUCCESS_200,
-                                                              ResponseMessages.UPDATE_SUCCESS,
-                                                              res,
-                                                              class_type.__name__), 200))
+                res = entity.convert_to_insert_schema()
+                session.close()
+            return make_response(create_json_response(responses.SUCCESS_200,
+                                                      ResponseMessages.UPDATE_SUCCESS,
+                                                      res,
+                                                      class_type.__name__), 200)
         else:
             session.close()
-            return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
-                                                              ResponseMessages.UPDATE_FAILED,
-                                                              data,
-                                                              class_type.__name__), 422))
+            return make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                      ResponseMessages.UPDATE_FAILED,
+                                                      data,
+                                                      class_type.__name__), 422)
     else:
         session.close()
-        return make_response(jsonify(create_json_response(responses.UNAUTHORIZED_403,
-                                                          ResponseMessages.UPDATE_NOT_AUTHORIZED,
-                                                          user_data), 403))
+        return make_response(create_json_response(responses.UNAUTHORIZED_403,
+                                                  ResponseMessages.UPDATE_NOT_AUTHORIZED,
+                                                  user_data), 403)
 
 
 def list_all(class_type):
-
     session = Session()
 
     res = session.query(class_type).all()
     if res is None:
-        return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
-                                                          ResponseMessages.LIST_EMPTY,
-                                                          None,
-                                                          class_type.__name__), 422))
+        return make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                  ResponseMessages.LIST_EMPTY,
+                                                  None,
+                                                  class_type.__name__), 422)
     attributes = class_type.get_attributes()
     schema = class_type.get_schema(many=True, only=(str(attributes.NAME), str(attributes.ID)))
     entities = schema.dump(res)
 
-    return make_response(jsonify(create_json_response(responses.SUCCESS_200,
-                                                      ResponseMessages.LIST_SUCCESS,
-                                                      entities,
-                                                      Country.__name__), 200))
+    return make_response(create_json_response(responses.SUCCESS_200,
+                                              ResponseMessages.LIST_SUCCESS,
+                                              entities,
+                                              Country.__name__), 200)
 
 
 @main.route('/create/country', methods=['GET', 'POST'])
 def create_country():
-
     resp = create(request, Country)
 
     return resp
@@ -184,7 +179,6 @@ def create_country():
 
 @main.route('/create/region', methods=['GET', 'POST'])
 def create_region():
-
     resp = create(request, Region)
 
     return resp
@@ -192,7 +186,6 @@ def create_region():
 
 @main.route('/create/location_type', methods=['GET', 'POST'])
 def create_location_type():
-
     resp = create(request, LocationType)
 
     return resp
@@ -200,7 +193,6 @@ def create_location_type():
 
 @main.route('/create/activity_type', methods=['GET', 'POST'])
 def create_activity_type():
-
     resp = create(request, ActivityType)
 
     return resp
@@ -208,7 +200,6 @@ def create_activity_type():
 
 @main.route('/create/location_activity', methods=['GET', 'POST'])
 def create_activity_location():
-
     resp = create(request, LocationActivity)
 
     return resp
@@ -216,7 +207,6 @@ def create_activity_location():
 
 @main.route('/create/activity', methods=['GET', 'POST'])
 def create_activity():
-
     resp = create(request, Activity)
 
     return resp
@@ -224,7 +214,6 @@ def create_activity():
 
 @main.route('/create/location', methods=['GET', 'POST'])
 def create_location():
-
     res = create(request, Location)
 
     return res
@@ -232,7 +221,6 @@ def create_location():
 
 @main.route('/update/country', methods=['GET', 'POST'])
 def update_country():
-
     resp = update(request, Country)
 
     return resp
@@ -240,7 +228,6 @@ def update_country():
 
 @main.route('/update/region', methods=['GET', 'POST'])
 def update_region():
-
     res = update(request, Region)
 
     return res
@@ -248,7 +235,6 @@ def update_region():
 
 @main.route('/update/location_type', methods=['GET', 'POST'])
 def update_location_type():
-
     res = update(request, LocationType)
 
     return res
@@ -256,7 +242,6 @@ def update_location_type():
 
 @main.route('/update/activity_type', methods=['GET', 'POST'])
 def update_activity_type():
-
     res = update(request, ActivityType)
 
     return res
@@ -264,7 +249,6 @@ def update_activity_type():
 
 @main.route('/update/location_activity', methods=['GET', 'POST'])
 def update_location_activity():
-
     res = update(request, LocationActivity)
 
     return res
@@ -272,7 +256,6 @@ def update_location_activity():
 
 @main.route('/update/activity', methods=['GET', 'POST'])
 def update_activity():
-
     res = update(request, Activity)
 
     return res
@@ -280,7 +263,6 @@ def update_activity():
 
 @main.route('/update/location', method=['GET', 'POST'])
 def update_location():
-
     res = update(request, Location)
 
     return res
@@ -288,7 +270,6 @@ def update_location():
 
 @main.route('/list/country', methods=['GET'])
 def list_country():
-
     res = list_all(Country)
 
     return res
@@ -296,7 +277,6 @@ def list_country():
 
 @main.route('/list/region', methods=['GET'])
 def list_region():
-
     res = list_all(Region)
 
     return res
@@ -304,7 +284,6 @@ def list_region():
 
 @main.route('/list/location_type', methods=['GET'])
 def list_location_type():
-
     res = list_all(LocationType)
 
     return res
@@ -312,7 +291,6 @@ def list_location_type():
 
 @main.route('/list/activity_type', methods=['GET'])
 def list_activity_type():
-
     res = list_all(ActivityType)
 
     return res
@@ -320,7 +298,6 @@ def list_activity_type():
 
 @main.route('/list/location_activity', methods=['GET', 'POST'])
 def list_location_activity():
-
     res = list_all(LocationActivity)
 
     return res
@@ -328,7 +305,6 @@ def list_location_activity():
 
 @main.route('/list/activity', methods=['GET', 'POST'])
 def list_activity():
-
     res = list_all(Activity)
 
     return res
@@ -336,15 +312,13 @@ def list_activity():
 
 @main.route('/list/location', methods=['GET', 'POST'])
 def list_location():
-
     res = list_all(Location)
 
     return res
 
 
 @main.route('/find_tour', methods=['GET'])
-def get_tour():
-
+def find_tour():
     user_data, data = extract_json_data(request, Activity)
 
     session = Session()
@@ -360,40 +334,41 @@ def get_tour():
     if user is not None and user.can(Permission.READ):
 
         if data.get("curr_lat"):
-            record_location = session.query(Location)\
-                                     .filter(Location.lat > data["curr_lat"] - 3 * data["max_dist"] / 100,
-                                             Location.lat < data["curr_lat"] + 3 * data["max_dist"] / 100,
-                                             Location.long > data["curr_long"] - 3 * data["max_dist"] / 100,
-                                             Location.long < data["curr_long"] + 3 * data["max_dist"] / 100)\
-                                     .all()
+            record_location = session.query(Location) \
+                .filter(Location.lat > data["curr_lat"] - 3 * data["max_dist"] / 100,
+                        Location.lat < data["curr_lat"] + 3 * data["max_dist"] / 100,
+                        Location.long > data["curr_long"] - 3 * data["max_dist"] / 100,
+                        Location.long < data["curr_long"] + 3 * data["max_dist"] / 100) \
+                .all()
         else:
-            return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
-                                                              ResponseMessages.FIND_MISSING_PARAMETER,
-                                                              data,
-                                                              Activity), 422))
+            return make_response(create_json_response(responses.MISSING_PARAMETER_422,
+                                                      ResponseMessages.FIND_MISSING_PARAMETER,
+                                                      data,
+                                                      Location.__name__), 422)
         schema = Location.get_schema(many=True, only=('name', 'lat', 'long', 'id'))
         locations = schema.dump(record_location)
 
         if record_location is None:
-            return make_response(jsonify(create_json_response(responses.BAD_REQUEST_400,
-                                                              ResponseMessages.FIND_NO_RESULTS,
-                                                              data,
-                                                              Activity)))
+            return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                      ResponseMessages.FIND_NO_RESULTS,
+                                                      data,
+                                                      Location.__name__), 400)
         else:
 
             for i, loc in enumerate(locations):
-                loc.update({"dist": distance_between_coordinates(loc["lat"], loc["long"], data["curr_lat"], data["curr_long"])})
+                loc.update({"dist": distance_between_coordinates(loc["lat"], loc["long"],
+                                                                 data["curr_lat"], data["curr_long"])})
             locations = [i for i in locations if i['dist'] < data["max_dist"]]
             locations.sort(key=sort_by_dist)
             ids = [int(i['id']) for i in locations]
 
-            record_activities = session.query(Activity)\
-                                       .join(ActivityType)\
-                                       .join(LocationActivity)\
-                                       .join(Location).join(Region)\
-                                       .join(Country)\
-                                       .filter(Location.id.in_(ids))\
-                                       .all()
+            record_activities = session.query(Activity) \
+                .join(ActivityType) \
+                .join(LocationActivity) \
+                .join(Location).join(Region) \
+                .join(Country) \
+                .filter(Location.id.in_(ids)) \
+                .all()
 
             schema = Activity.get_presentation_schema(many=True)
 
@@ -409,7 +384,8 @@ def get_tour():
                         'location': loc.location.name,
                         'region': loc.location.region.name,
                         'country': loc.location.region.country.name,
-                        'distance': [x['dist'] for x in locations if x['id'] == loc.location_id][0] if len([x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
+                        'distance': [x['dist'] for x in locations if x['id'] == loc.location_id][0] if len(
+                            [x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
                     }
                     act.append(activity_pres)
             act = sorted(act, key=lambda k: k['distance'])
@@ -426,17 +402,63 @@ def get_tour():
             act = [act[i] for i in idx_to_keep]
             activities = schema.dump(act)
             if len(activities) > 0:
-                return make_response(jsonify(create_json_response(responses.SUCCESS_200,
-                                                                  ResponseMessages.FIND_SUCCESS,
-                                                                  activities,
-                                                                  Activity), 200))
+                return make_response(create_json_response(responses.SUCCESS_200,
+                                                          ResponseMessages.FIND_SUCCESS,
+                                                          activities,
+                                                          Activity.__name__), 200)
             else:
-                return make_response(jsonify(create_json_response(responses.BAD_REQUEST_400,
-                                                                  ResponseMessages.FIND_NO_RESULTS,
-                                                                  data,
-                                                                  Activity), 400))
+                return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                          ResponseMessages.FIND_NO_RESULTS,
+                                                          data,
+                                                          Activity.__name__), 400)
 
     else:
-        return make_response(jsonify(create_json_response(responses.UNAUTHORIZED_403,
-                                                          ResponseMessages.CREATE_NOT_AUTHORIZED,
-                                                          user_data), 403))
+        return make_response(create_json_response(responses.UNAUTHORIZED_403,
+                                                  ResponseMessages.FIND_NOT_AUTHORIZED,
+                                                  user_data), 403)
+
+
+@main.route('/find_tour_by_term', methods=['GET'])
+def find_tour_by_term():
+    user_data, data = extract_json_data(request, Activity)
+
+    session = Session()
+
+    expected_user = extract_user(user_data, session, Activity)
+
+    if isinstance(expected_user, User):
+        user = expected_user
+    else:
+        resp = expected_user
+        return resp
+
+    if user is not None and user.can(Permission.READ):
+
+        if data.get('search_term'):
+            record_activities = session.query(Activity).filter(or_(data["search_term"] in Activity.name,
+                                                                   data["search_term"] in Activity.description)).all()
+        else:
+            return make_response(create_json_response(responses.MISSING_PARAMETER_422,
+                                                      ResponseMessages.FIND_MISSING_PARAMETER,
+                                                      data,
+                                                      Activity.__name__), 422)
+
+        if record_activities is None:
+            return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                      ResponseMessages.FIND_NO_RESULTS,
+                                                      data,
+                                                      Activity.__name__), 400)
+        else:
+            schema = Activity.get_presentation_schema(many=[True if len(record_activities) > 1 else False],
+                                                      only=('name', 'description', 'multi_day', 'activity_type'))
+            activities = schema.dump(record_activities)
+
+            return make_response(create_json_response(responses.SUCCESS_200,
+                                                      ResponseMessages.FIND_SUCCESS,
+                                                      activities,
+                                                      Activity.__name__), 200)
+
+    else:
+        return make_response(create_json_response(responses.UNAUTHORIZED_403,
+                                                  ResponseMessages.FIND_NOT_AUTHORIZED,
+                                                  user_data), 400)

@@ -55,8 +55,8 @@ class Activity(Entity, Base):
         return ActivityInsertSchema
 
     @staticmethod
-    def get_presentation_schema(many):
-        return ActivityPresentationSchema(many=many)
+    def get_presentation_schema(many, only=()):
+        return ActivityPresentationSchema(many=many, only=only)
 
     @staticmethod
     def get_schema(many, only):

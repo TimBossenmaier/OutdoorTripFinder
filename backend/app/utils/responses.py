@@ -3,6 +3,7 @@ Standard class of HTTP responses
 """
 
 from enum import Enum
+from flask import jsonify
 
 INVALID_FIELD_NAME_SENT_422 = {
     "http_code": 422,
@@ -60,7 +61,7 @@ def create_json_response(http_resp, message, data, classname=""):
     http_resp.update({'message': str(message).format(classname)})
     http_resp.update({'data': data})
 
-    return http_resp
+    return jsonify(http_resp)
 
 
 class ResponseMessages(Enum):
@@ -97,6 +98,7 @@ class ResponseMessages(Enum):
     FIND_MISSING_PARAMETER = "[find] {}, missing parameter"
     FIND_NO_RESULTS = "[find] {}, no results"
     FIND_SUCCESS = "[find] {}, successful"
+    FIND_NOT_AUTHORIZED = "[find] no permission"
 
     def __str__(self):
         return self.value
