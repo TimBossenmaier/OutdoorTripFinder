@@ -13,6 +13,7 @@ from ..entities.location import Location
 from ..main.error_handling import investigate_integrity_error
 from ..utils import responses
 from ..utils.responses import create_json_response, ResponseMessages
+from  ..utils.helpers import distance_between_coordinates, sort_by_dist
 
 main = Blueprint('main', __name__)
 
@@ -339,3 +340,103 @@ def list_location():
     res = list_all(Location)
 
     return res
+
+
+@main.route('/find_tour', methods=['GET'])
+def get_tour():
+
+    user_data, data = extract_json_data(request, Activity)
+
+    session = Session()
+
+    expected_user = extract_user(user_data, session, Activity)
+
+    if isinstance(expected_user, User):
+        user = expected_user
+    else:
+        resp = expected_user
+        return resp
+
+    if user is not None and user.can(Permission.READ):
+
+        if data.get("curr_lat"):
+            record_location = session.query(Location)\
+                                     .filter(Location.lat > data["curr_lat"] - 3 * data["max_dist"] / 100,
+                                             Location.lat < data["curr_lat"] + 3 * data["max_dist"] / 100,
+                                             Location.long > data["curr_long"] - 3 * data["max_dist"] / 100,
+                                             Location.long < data["curr_long"] + 3 * data["max_dist"] / 100)\
+                                     .all()
+        else:
+            return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
+                                                              ResponseMessages.FIND_MISSING_PARAMETER,
+                                                              data,
+                                                              Activity), 422))
+        schema = Location.get_schema(many=True, only=('name', 'lat', 'long', 'id'))
+        locations = schema.dump(record_location)
+
+        if record_location is None:
+            return make_response(jsonify(create_json_response(responses.BAD_REQUEST_400,
+                                                              ResponseMessages.FIND_NO_RESULTS,
+                                                              data,
+                                                              Activity)))
+        else:
+
+            for i, loc in enumerate(locations):
+                loc.update({"dist": distance_between_coordinates(loc["lat"], loc["long"], data["curr_lat"], data["curr_long"])})
+            locations = [i for i in locations if i['dist'] < data["max_dist"]]
+            locations.sort(key=sort_by_dist)
+            ids = [int(i['id']) for i in locations]
+
+            record_activities = session.query(Activity)\
+                                       .join(ActivityType)\
+                                       .join(LocationActivity)\
+                                       .join(Location).join(Region)\
+                                       .join(Country)\
+                                       .filter(Location.id.in_(ids))\
+                                       .all()
+
+            schema = Activity.get_presentation_schema(many=True)
+
+            act = []
+            for rec in record_activities:
+                for loc in rec.locations:
+                    activity_pres = {
+                        'name': rec.name,
+                        'description': rec.description,
+                        'activity_type': rec.activity_type.name,
+                        'source': rec.source,
+                        'save_path': rec.save_path,
+                        'location': loc.location.name,
+                        'region': loc.location.region.name,
+                        'country': loc.location.region.country.name,
+                        'distance': [x['dist'] for x in locations if x['id'] == loc.location_id][0] if len([x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
+                    }
+                    act.append(activity_pres)
+            act = sorted(act, key=lambda k: k['distance'])
+
+            # keep only one entry per activity
+            activity_names = set()
+            idx_to_keep = []
+            for idx, item in enumerate(act):
+
+                if item["name"] not in activity_names:
+                    activity_names.add(item["name"])
+                    idx_to_keep.append(idx)
+
+            act = [act[i] for i in idx_to_keep]
+            activities = schema.dump(act)
+            if len(activities) > 0:
+                return make_response(jsonify(create_json_response(responses.SUCCESS_200,
+                                                                  ResponseMessages.FIND_SUCCESS,
+                                                                  activities,
+                                                                  Activity), 200))
+            else:
+                return make_response(jsonify(create_json_response(responses.BAD_REQUEST_400,
+                                                                  ResponseMessages.FIND_NO_RESULTS,
+                                                                  data,
+                                                                  Activity), 400))
+
+    else:
+        return make_response(jsonify(create_json_response(responses.UNAUTHORIZED_403,
+                                                          ResponseMessages.CREATE_NOT_AUTHORIZED,
+                                                          user_data), 403))
