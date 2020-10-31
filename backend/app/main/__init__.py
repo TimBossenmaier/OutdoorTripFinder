@@ -6,6 +6,7 @@ from ..entities.user import UserAttributes, User, Permission
 from ..entities.country import Country
 from ..entities.region import Region
 from ..entities.location_type import LocationType
+from ..entities.activity_type import ActivityType
 from ..main.error_handling import investigate_integrity_error
 from ..utils import responses
 from ..utils.responses import create_json_response, ResponseMessages
@@ -177,7 +178,7 @@ def create_country():
     return resp
 
 
-@main.route('create/region', methods=['GET', 'POST'])
+@main.route('/create/region', methods=['GET', 'POST'])
 def create_region():
 
     resp = create(request, Region)
@@ -193,6 +194,14 @@ def create_location_type():
     return resp
 
 
+@main.route('/create/activity_type', methods=['GET', 'POST'])
+def create_activity_type():
+
+    resp = create(request, ActivityType)
+
+    return resp
+
+
 @main.route('/update/country', methods=['GET', 'POST'])
 def update_country():
 
@@ -201,7 +210,7 @@ def update_country():
     return resp
 
 
-@main.route('update/region', methods=['GET', 'POST'])
+@main.route('/update/region', methods=['GET', 'POST'])
 def update_region():
 
     res = update(request, Region)
@@ -209,10 +218,18 @@ def update_region():
     return res
 
 
-@main.route('update/location_type', methods=['GET', 'POST'])
+@main.route('/update/location_type', methods=['GET', 'POST'])
 def update_location_type():
 
     res = update(request, LocationType)
+
+    return res
+
+
+@main.route('/update/activity_type', methods=['GET', 'POST'])
+def update_activity_type():
+
+    res = update(request, ActivityType)
 
     return res
 
@@ -225,7 +242,7 @@ def list_country():
     return res
 
 
-@main.route('list/region', methods=['GET'])
+@main.route('/list/region', methods=['GET'])
 def list_region():
 
     res = list_all(Region)
@@ -233,9 +250,17 @@ def list_region():
     return res
 
 
-@main.route('list/location_type', methods=['GET'])
+@main.route('/list/location_type', methods=['GET'])
 def list_location_type():
 
     res = list_all(LocationType)
+
+    return res
+
+
+@main.route('/list/activity_type', methods=['GET'])
+def list_activity_type():
+
+    res = list_all(ActivityType)
 
     return res
