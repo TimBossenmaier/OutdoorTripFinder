@@ -8,7 +8,8 @@ from ..entities.region import Region
 from ..entities.location_type import LocationType
 from ..entities.activity_type import ActivityType
 from ..entities.location_activity import LocationActivity
-from .. entities.activity import Activity
+from ..entities.activity import Activity
+from ..entities.location import Location
 from ..main.error_handling import investigate_integrity_error
 from ..utils import responses
 from ..utils.responses import create_json_response, ResponseMessages
@@ -220,6 +221,14 @@ def create_activity():
     return resp
 
 
+@main.route('/create/location', methods=['GET', 'POST'])
+def create_location():
+
+    res = create(request, Location)
+
+    return res
+
+
 @main.route('/update/country', methods=['GET', 'POST'])
 def update_country():
 
@@ -268,6 +277,14 @@ def update_activity():
     return res
 
 
+@main.route('/update/location', method=['GET', 'POST'])
+def update_location():
+
+    res = update(request, Location)
+
+    return res
+
+
 @main.route('/list/country', methods=['GET'])
 def list_country():
 
@@ -312,5 +329,13 @@ def list_location_activity():
 def list_activity():
 
     res = list_all(Activity)
+
+    return res
+
+
+@main.route('/list/location', methods=['GET', 'POST'])
+def list_location():
+
+    res = list_all(Location)
 
     return res
