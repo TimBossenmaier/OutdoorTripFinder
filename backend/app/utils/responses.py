@@ -95,6 +95,7 @@ class ResponseMessages(Enum):
     UPDATE_NOT_AUTHORIZED = "[update] no permission"
     LIST_SUCCESS = "[list] {} successful"
     LIST_EMPTY = "[list] {} empty"
+    LIST_INVALID_INPUT = "[list] {}, invalid parameters provided"
     FIND_MISSING_PARAMETER = "[find] {}, missing parameter"
     FIND_NO_RESULTS = "[find] {}, no results"
     FIND_SUCCESS = "[find] {}, successful"

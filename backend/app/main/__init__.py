@@ -1,16 +1,16 @@
 from flask import Blueprint, request, make_response
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from sqlalchemy.exc import IntegrityError
 
 from ..entities.entity import Session
 from ..entities.user import UserAttributes, User, Permission
 from ..entities.country import Country
-from ..entities.region import Region
+from ..entities.region import Region, RegionAttributes
 from ..entities.location_type import LocationType
 from ..entities.activity_type import ActivityType
 from ..entities.location_activity import LocationActivity
-from ..entities.activity import Activity
-from ..entities.location import Location
+from ..entities.activity import Activity, ActivityAttributes
+from ..entities.location import Location, LocationAttributes
 from ..main.error_handling import investigate_integrity_error
 from ..utils import responses
 from ..utils.responses import create_json_response, ResponseMessages
@@ -151,23 +151,78 @@ def update(req, class_type):
                                                   user_data), 403)
 
 
-def list_all(class_type):
+# TOD options for activity type and action_type
+def list_all(class_type, term='', keys=None, typ=None):
     session = Session()
 
-    res = session.query(class_type).all()
+    if term != '' and keys is None:
+        search_term = '%{}%'.format(term)
+        res = session.query(class_type).filter(class_type.name.like(search_term)).all()
+
+    elif term == '' and keys is not None:
+
+        if class_type == Country:
+            return make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                      ResponseMessages.LIST_INVALID_INPUT,
+                                                      keys,
+                                                      class_type.__name__), 422)
+        else:
+            if keys.get(RegionAttributes.COUNTRY_ID if class_type == Region else LocationAttributes.REGION_ID):
+                res = session.query(Region if class_type == Region else Location).filter(Region.country_id.in_(keys.get(RegionAttributes.COUNTRY_ID))
+                                                                                         if class_type == Region else
+                                                                                         Location.region_id.in_(keys.get(LocationAttributes.REGION_ID))).all()
+            else:
+                make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                   ResponseMessages.LIST_INVALID_INPUT,
+                                                   keys,
+                                                   class_type.__name__), 422)
+
+    elif term != '' and keys is not None:
+
+        if class_type == Country:
+            return make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                      ResponseMessages.LIST_INVALID_INPUT,
+                                                      keys,
+                                                      class_type.__name__), 422)
+        else:
+            if keys.get(RegionAttributes.COUNTRY_ID if class_type == Region else LocationAttributes.REGION_ID):
+                search_term = '%{}%'.format(term)
+                res = session.query(Region if class_type == Region else Location).filter(
+                    and_(Region.country_id.in_(keys.get(RegionAttributes.COUNTRY_ID)), Region.name.like(search_term)
+                    if class_type == Region else Location.region_id.in_(keys.get(LocationAttributes.REGION_ID)),
+                         Location.name.like(search_term))).all()
+            else:
+                make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                   ResponseMessages.LIST_INVALID_INPUT,
+                                                   keys,
+                                                   class_type.__name__), 422)
+    elif typ is not None:
+        if class_type == Location and typ.get(LocationAttributes.LOCATION_TYPE_ID):
+            res = session.query(Location).filter(Location.location_type_id == typ.get(LocationAttributes.LOCATION_TYPE_ID)).all()
+        elif class_type == Activity and typ.get(ActivityAttributes.ACTIVITY_TYPE_ID):
+            res = session.query(Activity).filter(Activity.activity_type_id == typ.get(ActivityAttributes.ACTIVITY_TYPE_ID)).all()
+        else:
+            return make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                      ResponseMessages.LIST_INVALID_INPUT,
+                                                      typ,
+                                                      class_type.__name__), 422)
+    else:
+        res = session.query(class_type).all()
+
     if res is None:
         return make_response(create_json_response(responses.INVALID_INPUT_422,
                                                   ResponseMessages.LIST_EMPTY,
                                                   None,
                                                   class_type.__name__), 422)
-    attributes = class_type.get_attributes()
-    schema = class_type.get_schema(many=True, only=(str(attributes.NAME), str(attributes.ID)))
-    entities = schema.dump(res)
+    else:
+        attributes = class_type.get_attributes()
+        schema = class_type.get_schema(many=True, only=(str(attributes.NAME), str(attributes.ID)))
+        entities = schema.dump(res)
 
-    return make_response(create_json_response(responses.SUCCESS_200,
-                                              ResponseMessages.LIST_SUCCESS,
-                                              entities,
-                                              Country.__name__), 200)
+        return make_response(create_json_response(responses.SUCCESS_200,
+                                                  ResponseMessages.LIST_SUCCESS,
+                                                  entities,
+                                                  Country.__name__), 200)
 
 
 @main.route('/create/country', methods=['GET', 'POST'])
@@ -345,7 +400,10 @@ def find_tour():
                                                       ResponseMessages.FIND_MISSING_PARAMETER,
                                                       data,
                                                       Location.__name__), 422)
-        schema = Location.get_schema(many=True, only=('name', 'lat', 'long', 'id'))
+        schema = Location.get_schema(many=True, only=(LocationAttributes.NAME,
+                                                      LocationAttributes.LATITUDE,
+                                                      LocationAttributes.LONGITUDE,
+                                                      LocationAttributes.ID))
         locations = schema.dump(record_location)
 
         if record_location is None:
@@ -435,8 +493,10 @@ def find_tour_by_term():
     if user is not None and user.can(Permission.READ):
 
         if data.get('search_term'):
-            record_activities = session.query(Activity).filter(or_(data["search_term"] in Activity.name,
-                                                                   data["search_term"] in Activity.description)).all()
+            term = data.get("search_term")
+            search_term = '%{}%'.format(term)
+            record_activities = session.query(Activity).filter(or_(Activity.name.like(search_term),
+                                                                   Activity.description.like(search_term))).all()
         else:
             return make_response(create_json_response(responses.MISSING_PARAMETER_422,
                                                       ResponseMessages.FIND_MISSING_PARAMETER,
@@ -450,7 +510,10 @@ def find_tour_by_term():
                                                       Activity.__name__), 400)
         else:
             schema = Activity.get_presentation_schema(many=[True if len(record_activities) > 1 else False],
-                                                      only=('name', 'description', 'multi_day', 'activity_type'))
+                                                      only=(ActivityAttributes.NAME,
+                                                            ActivityAttributes.DESCRIPTION,
+                                                            ActivityAttributes.MULTI_DAY,
+                                                            'activity_type'))
             activities = schema.dump(record_activities)
 
             return make_response(create_json_response(responses.SUCCESS_200,

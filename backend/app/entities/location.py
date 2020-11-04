@@ -84,7 +84,7 @@ class LocationInsertSchema(Schema):
     created_by = fields.Integer()
 
 
-class ActivityAttributes(Enum):
+class LocationAttributes(Enum):
     NAME = 'name'
     LATITUDE = 'lat'
     LONGITUDE = 'long'
