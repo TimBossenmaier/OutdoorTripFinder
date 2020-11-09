@@ -157,7 +157,7 @@ def list_all(class_type, term='', keys=None, typ=None):
 
     if term != '' and keys is None:
         search_term = '%{}%'.format(term)
-        res = session.query(class_type).filter(class_type.name.like(search_term)).all()
+        res = session.query(class_type).filter(class_type.name.like(search_term)).order_by(class_type.id.asc()).all()
 
     elif term == '' and keys is not None:
 
@@ -170,7 +170,9 @@ def list_all(class_type, term='', keys=None, typ=None):
             if keys.get(RegionAttributes.COUNTRY_ID if class_type == Region else LocationAttributes.REGION_ID):
                 res = session.query(Region if class_type == Region else Location).filter(Region.country_id.in_(keys.get(RegionAttributes.COUNTRY_ID))
                                                                                          if class_type == Region else
-                                                                                         Location.region_id.in_(keys.get(LocationAttributes.REGION_ID))).all()
+                                                                                         Location.region_id.in_(keys.get(LocationAttributes.REGION_ID))) \
+                                                                                  .order_by(class_type.id.asc()) \
+                                                                                  .all()
             else:
                 make_response(create_json_response(responses.INVALID_INPUT_422,
                                                    ResponseMessages.LIST_INVALID_INPUT,
@@ -190,7 +192,9 @@ def list_all(class_type, term='', keys=None, typ=None):
                 res = session.query(Region if class_type == Region else Location).filter(
                     and_(Region.country_id.in_(keys.get(RegionAttributes.COUNTRY_ID)), Region.name.like(search_term)
                     if class_type == Region else Location.region_id.in_(keys.get(LocationAttributes.REGION_ID)),
-                         Location.name.like(search_term))).all()
+                         Location.name.like(search_term)))\
+                    .order_by(class_type.id.asc())\
+                    .all()
             else:
                 make_response(create_json_response(responses.INVALID_INPUT_422,
                                                    ResponseMessages.LIST_INVALID_INPUT,
@@ -198,16 +202,22 @@ def list_all(class_type, term='', keys=None, typ=None):
                                                    class_type.__name__), 422)
     elif typ is not None:
         if class_type == Location and typ.get(LocationAttributes.LOCATION_TYPE_ID):
-            res = session.query(Location).filter(Location.location_type_id == typ.get(LocationAttributes.LOCATION_TYPE_ID)).all()
+            res = session.query(Location)\
+                .filter(Location.location_type_id == typ.get(LocationAttributes.LOCATION_TYPE_ID))\
+                .order_by(class_type.id.asc())\
+                .all()
         elif class_type == Activity and typ.get(ActivityAttributes.ACTIVITY_TYPE_ID):
-            res = session.query(Activity).filter(Activity.activity_type_id == typ.get(ActivityAttributes.ACTIVITY_TYPE_ID)).all()
+            res = session.query(Activity)\
+                .filter(Activity.activity_type_id == typ.get(ActivityAttributes.ACTIVITY_TYPE_ID))\
+                .order_by(class_type.id.asc())\
+                .all()
         else:
             return make_response(create_json_response(responses.INVALID_INPUT_422,
                                                       ResponseMessages.LIST_INVALID_INPUT,
                                                       typ,
                                                       class_type.__name__), 422)
     else:
-        res = session.query(class_type).all()
+        res = session.query(class_type).order_by(class_type.id.asc()).all()
 
     if res is None:
         return make_response(create_json_response(responses.INVALID_INPUT_422,
@@ -222,7 +232,7 @@ def list_all(class_type, term='', keys=None, typ=None):
         return make_response(create_json_response(responses.SUCCESS_200,
                                                   ResponseMessages.LIST_SUCCESS,
                                                   entities,
-                                                  Country.__name__), 200)
+                                                  class_type.__name__), 200)
 
 
 @main.route('/create/country', methods=['GET', 'POST'])
@@ -316,7 +326,7 @@ def update_activity():
     return res
 
 
-@main.route('/update/location', method=['GET', 'POST'])
+@main.route('/update/location', methods=['GET', 'POST'])
 def update_location():
     res = update(request, Location)
 
