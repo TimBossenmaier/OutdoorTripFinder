@@ -51,7 +51,7 @@ class Location(Entity, Base):
 
     @staticmethod
     def get_insert_schema():
-        return LocationInsertSchema
+        return LocationInsertSchema()
 
     @staticmethod
     def get_schema(many, only):

@@ -39,7 +39,7 @@ class ActivityType(Entity, Base):
 
     @staticmethod
     def get_insert_schema():
-        return ActivityTypeInsertSchema
+        return ActivityTypeInsertSchema()
 
     @staticmethod
     def get_schema(many, only):

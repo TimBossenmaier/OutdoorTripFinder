@@ -52,11 +52,14 @@ class Activity(Entity, Base):
 
     @staticmethod
     def get_insert_schema():
-        return ActivityInsertSchema
+        return ActivityInsertSchema()
 
     @staticmethod
     def get_presentation_schema(many, only=()):
-        return ActivityPresentationSchema(many=many, only=only)
+        if len(only) == 0:
+            return ActivityPresentationSchema(many=many)
+        else:
+            return ActivityPresentationSchema(many=many, only=only)
 
     @staticmethod
     def get_schema(many, only):

@@ -151,7 +151,6 @@ def update(req, class_type):
                                                   user_data), 403)
 
 
-# TOD options for activity type and action_type
 def list_all(class_type, term='', keys=None, typ=None):
     session = Session()
 
@@ -167,12 +166,16 @@ def list_all(class_type, term='', keys=None, typ=None):
                                                       keys,
                                                       class_type.__name__), 422)
         else:
-            if keys.get(RegionAttributes.COUNTRY_ID if class_type == Region else LocationAttributes.REGION_ID):
-                res = session.query(Region if class_type == Region else Location).filter(Region.country_id.in_(keys.get(RegionAttributes.COUNTRY_ID))
-                                                                                         if class_type == Region else
-                                                                                         Location.region_id.in_(keys.get(LocationAttributes.REGION_ID))) \
-                                                                                  .order_by(class_type.id.asc()) \
-                                                                                  .all()
+            if keys.get(
+                    RegionAttributes.COUNTRY_ID
+                    if class_type == Region
+                    else LocationAttributes.REGION_ID):
+                res = session.query(Region if class_type == Region else Location).filter(
+                    Region.country_id.in_(keys.get(RegionAttributes.COUNTRY_ID))
+                    if class_type == Region else
+                    Location.region_id.in_(keys.get(LocationAttributes.REGION_ID))) \
+                    .order_by(class_type.id.asc()) \
+                    .all()
             else:
                 make_response(create_json_response(responses.INVALID_INPUT_422,
                                                    ResponseMessages.LIST_INVALID_INPUT,
@@ -190,10 +193,10 @@ def list_all(class_type, term='', keys=None, typ=None):
             if keys.get(RegionAttributes.COUNTRY_ID if class_type == Region else LocationAttributes.REGION_ID):
                 search_term = '%{}%'.format(term)
                 res = session.query(Region if class_type == Region else Location).filter(
-                    and_(Region.country_id.in_(keys.get(RegionAttributes.COUNTRY_ID)), Region.name.like(search_term)
-                    if class_type == Region else Location.region_id.in_(keys.get(LocationAttributes.REGION_ID)),
-                         Location.name.like(search_term)))\
-                    .order_by(class_type.id.asc())\
+                    and_((Region.country_id.in_(keys.get(RegionAttributes.COUNTRY_ID)), Region.name.like(search_term))
+                         if class_type == Region else (Location.region_id.in_(keys.get(LocationAttributes.REGION_ID)),
+                                                       Location.name.like(search_term)))) \
+                    .order_by(class_type.id.asc()) \
                     .all()
             else:
                 make_response(create_json_response(responses.INVALID_INPUT_422,
@@ -202,14 +205,14 @@ def list_all(class_type, term='', keys=None, typ=None):
                                                    class_type.__name__), 422)
     elif typ is not None:
         if class_type == Location and typ.get(LocationAttributes.LOCATION_TYPE_ID):
-            res = session.query(Location)\
-                .filter(Location.location_type_id == typ.get(LocationAttributes.LOCATION_TYPE_ID))\
-                .order_by(class_type.id.asc())\
+            res = session.query(Location) \
+                .filter(Location.location_type_id == typ.get(LocationAttributes.LOCATION_TYPE_ID)) \
+                .order_by(class_type.id.asc()) \
                 .all()
         elif class_type == Activity and typ.get(ActivityAttributes.ACTIVITY_TYPE_ID):
-            res = session.query(Activity)\
-                .filter(Activity.activity_type_id == typ.get(ActivityAttributes.ACTIVITY_TYPE_ID))\
-                .order_by(class_type.id.asc())\
+            res = session.query(Activity) \
+                .filter(Activity.activity_type_id == typ.get(ActivityAttributes.ACTIVITY_TYPE_ID)) \
+                .order_by(class_type.id.asc()) \
                 .all()
         else:
             return make_response(create_json_response(responses.INVALID_INPUT_422,
@@ -226,7 +229,14 @@ def list_all(class_type, term='', keys=None, typ=None):
                                                   class_type.__name__), 422)
     else:
         attributes = class_type.get_attributes()
-        schema = class_type.get_schema(many=True, only=(str(attributes.NAME), str(attributes.ID)))
+        if class_type == LocationActivity:
+            schema = LocationActivity.get_schema(many=True, only=[str(attributes.ID),
+                                                                  str(attributes.ACTIVITY_ID),
+                                                                  str(attributes.LOCATION_ID)])
+        else:
+            schema = class_type.get_schema(many=True, only=((str(attributes.NAME), str(attributes.ID), str(attributes.REGION_ID))
+                                                            if class_type == Location
+                                                            else (str(attributes.NAME), str(attributes.ID))))
         entities = schema.dump(res)
 
         return make_response(create_json_response(responses.SUCCESS_200,
@@ -382,7 +392,7 @@ def list_location():
     return res
 
 
-@main.route('/find_tour', methods=['GET'])
+@main.route('/find_tour', methods=['GET', 'POST'])
 def find_tour():
     user_data, data = extract_json_data(request, Activity)
 
@@ -410,10 +420,10 @@ def find_tour():
                                                       ResponseMessages.FIND_MISSING_PARAMETER,
                                                       data,
                                                       Location.__name__), 422)
-        schema = Location.get_schema(many=True, only=(LocationAttributes.NAME,
-                                                      LocationAttributes.LATITUDE,
-                                                      LocationAttributes.LONGITUDE,
-                                                      LocationAttributes.ID))
+        schema = Location.get_schema(many=True, only=(str(LocationAttributes.NAME),
+                                                      str(LocationAttributes.LATITUDE),
+                                                      str(LocationAttributes.LONGITUDE),
+                                                      str(LocationAttributes.ID)))
         locations = schema.dump(record_location)
 
         if record_location is None:
@@ -486,7 +496,7 @@ def find_tour():
                                                   user_data), 403)
 
 
-@main.route('/find_tour_by_term', methods=['GET'])
+@main.route('/find_tour_by_term', methods=['GET', 'POST'])
 def find_tour_by_term():
     user_data, data = extract_json_data(request, Activity)
 
@@ -520,10 +530,10 @@ def find_tour_by_term():
                                                       Activity.__name__), 400)
         else:
             schema = Activity.get_presentation_schema(many=[True if len(record_activities) > 1 else False],
-                                                      only=(ActivityAttributes.NAME,
-                                                            ActivityAttributes.DESCRIPTION,
-                                                            ActivityAttributes.MULTI_DAY,
-                                                            'activity_type'))
+                                                      only=(str(ActivityAttributes.NAME),
+                                                            str(ActivityAttributes.DESCRIPTION),
+                                                            str(ActivityAttributes.MULTI_DAY),
+                                                            str(ActivityAttributes.ACTIVITY_TYPE_ID)))
             activities = schema.dump(record_activities)
 
             return make_response(create_json_response(responses.SUCCESS_200,

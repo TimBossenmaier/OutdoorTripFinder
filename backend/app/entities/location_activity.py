@@ -44,7 +44,7 @@ class LocationActivity(Entity, Base):
 
     @staticmethod
     def get_insert_schema():
-        return LocationActivityInsertSchema
+        return LocationActivityInsertSchema()
 
     @staticmethod
     def get_schema(many, only):
