@@ -1,4 +1,4 @@
-from flask import Blueprint, request, make_response
+from flask import Blueprint, request as rq, make_response
 from sqlalchemy import or_, and_
 from sqlalchemy.exc import IntegrityError
 
@@ -24,8 +24,15 @@ def get_main_app():
 
 
 def extract_json_data(req, class_type):
-    user_data = req.get_json()["user"]
-    data = req.get_json()[class_type.__name__.lower()]
+    try:
+        user_data = req.get_json()["user"]
+    except KeyError:
+        user_data = None
+
+    try:
+        data = req.get_json()[class_type.__name__.lower()]
+    except KeyError:
+        data = None
 
     return user_data, data
 
@@ -63,13 +70,23 @@ def create(req, class_type):
 
     session = Session()
 
-    expected_user = extract_user(user_data, session, class_type)
+    if user_data is not None:
+        expected_user = extract_user(user_data, session, class_type)
+    else:
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
+                                                  None), 400)
 
     if isinstance(expected_user, User):
         user = expected_user
     else:
         resp = expected_user
         return resp
+
+    if data is None:
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_DATA,
+                                                  None), 400)
 
     if user is not None and user.can(Permission.CREATE):
         data.update({'created_by': user.id})
@@ -107,13 +124,24 @@ def update(req, class_type):
     user_data, data = extract_json_data(req, class_type)
 
     session = Session()
-    expected_user = extract_user(user_data, session, class_type)
+
+    if user_data is not None:
+        expected_user = extract_user(user_data, session, class_type)
+    else:
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
+                                                  None), 400)
 
     if isinstance(expected_user, User):
         user = expected_user
     else:
         resp = expected_user
         return resp
+
+    if data is None:
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_DATA,
+                                                  None), 400)
 
     if user is not None and user.can(Permission.CREATE):
         entity = session.query(class_type).filter_by(id=data.get(str(class_type.get_attributes().ID))).first()
@@ -151,8 +179,16 @@ def update(req, class_type):
                                                   user_data), 403)
 
 
-def list_all(class_type, term='', keys=None, typ=None):
+def list_all(class_type, req=None, term='', keys=None, typ=None):
     session = Session()
+
+    if req is not None:
+        _, data = extract_json_data(req, class_type)
+
+        if data is None:
+            return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                      ResponseMessages.MAIN_NO_DATA,
+                                                      None), 400)
 
     if term != '' and keys is None:
         search_term = '%{}%'.format(term)
@@ -234,9 +270,10 @@ def list_all(class_type, term='', keys=None, typ=None):
                                                                   str(attributes.ACTIVITY_ID),
                                                                   str(attributes.LOCATION_ID)])
         else:
-            schema = class_type.get_schema(many=True, only=((str(attributes.NAME), str(attributes.ID), str(attributes.REGION_ID))
-                                                            if class_type == Location
-                                                            else (str(attributes.NAME), str(attributes.ID))))
+            schema = class_type.get_schema(many=True,
+                                           only=((str(attributes.NAME), str(attributes.ID), str(attributes.REGION_ID))
+                                                 if class_type == Location
+                                                 else (str(attributes.NAME), str(attributes.ID))))
         entities = schema.dump(res)
 
         return make_response(create_json_response(responses.SUCCESS_200,
@@ -247,98 +284,98 @@ def list_all(class_type, term='', keys=None, typ=None):
 
 @main.route('/create/country', methods=['GET', 'POST'])
 def create_country():
-    resp = create(request, Country)
+    resp = create(rq, Country)
 
     return resp
 
 
 @main.route('/create/region', methods=['GET', 'POST'])
 def create_region():
-    resp = create(request, Region)
+    resp = create(rq, Region)
 
     return resp
 
 
 @main.route('/create/location_type', methods=['GET', 'POST'])
 def create_location_type():
-    resp = create(request, LocationType)
+    resp = create(rq, LocationType)
 
     return resp
 
 
 @main.route('/create/activity_type', methods=['GET', 'POST'])
 def create_activity_type():
-    resp = create(request, ActivityType)
+    resp = create(rq, ActivityType)
 
     return resp
 
 
 @main.route('/create/location_activity', methods=['GET', 'POST'])
 def create_activity_location():
-    resp = create(request, LocationActivity)
+    resp = create(rq, LocationActivity)
 
     return resp
 
 
 @main.route('/create/activity', methods=['GET', 'POST'])
 def create_activity():
-    resp = create(request, Activity)
+    resp = create(rq, Activity)
 
     return resp
 
 
 @main.route('/create/location', methods=['GET', 'POST'])
 def create_location():
-    res = create(request, Location)
+    res = create(rq, Location)
 
     return res
 
 
 @main.route('/update/country', methods=['GET', 'POST'])
 def update_country():
-    resp = update(request, Country)
+    resp = update(rq, Country)
 
     return resp
 
 
 @main.route('/update/region', methods=['GET', 'POST'])
 def update_region():
-    res = update(request, Region)
+    res = update(rq, Region)
 
     return res
 
 
 @main.route('/update/location_type', methods=['GET', 'POST'])
 def update_location_type():
-    res = update(request, LocationType)
+    res = update(rq, LocationType)
 
     return res
 
 
 @main.route('/update/activity_type', methods=['GET', 'POST'])
 def update_activity_type():
-    res = update(request, ActivityType)
+    res = update(rq, ActivityType)
 
     return res
 
 
 @main.route('/update/location_activity', methods=['GET', 'POST'])
 def update_location_activity():
-    res = update(request, LocationActivity)
+    res = update(rq, LocationActivity)
 
     return res
 
 
 @main.route('/update/activity', methods=['GET', 'POST'])
 def update_activity():
-    res = update(request, Activity)
+    res = update(rq, Activity)
 
     return res
 
 
 @main.route('/update/location', methods=['GET', 'POST'])
 def update_location():
-    res = update(request, Location)
+    res = update(rq, Location)
 
     return res
 
@@ -394,17 +431,28 @@ def list_location():
 
 @main.route('/find_tour', methods=['GET', 'POST'])
 def find_tour():
-    user_data, data = extract_json_data(request, Activity)
+
+    user_data, data = extract_json_data(rq, Activity)
 
     session = Session()
 
-    expected_user = extract_user(user_data, session, Activity)
+    if user_data is not None:
+        expected_user = extract_user(user_data, session, Activity)
+    else:
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
+                                                  None), 400)
 
     if isinstance(expected_user, User):
         user = expected_user
     else:
         resp = expected_user
         return resp
+
+    if data is None:
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_DATA,
+                                                  None), 400)
 
     if user is not None and user.can(Permission.READ):
 
@@ -498,17 +546,28 @@ def find_tour():
 
 @main.route('/find_tour_by_term', methods=['GET', 'POST'])
 def find_tour_by_term():
-    user_data, data = extract_json_data(request, Activity)
+
+    user_data, data = extract_json_data(rq, Activity)
 
     session = Session()
 
-    expected_user = extract_user(user_data, session, Activity)
+    if user_data is not None:
+        expected_user = extract_user(user_data, session, Activity)
+    else:
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
+                                                  None), 400)
 
     if isinstance(expected_user, User):
         user = expected_user
     else:
         resp = expected_user
         return resp
+
+    if data is None:
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_DATA,
+                                                  None), 400)
 
     if user is not None and user.can(Permission.READ):
 

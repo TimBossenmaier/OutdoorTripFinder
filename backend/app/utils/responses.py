@@ -85,6 +85,8 @@ class ResponseMessages(Enum):
     AUTH_EMAIL_REQUESTED = "[auth] change email requested"
     AUTH_EMAIL_CHANGED = "[auth] email change successful"
     AUTH_EMAIL_FAILED = "[auth] email change failed"
+    MAIN_NO_USER_INFORMATION = "[main] no information about user provided"
+    MAIN_NO_DATA = "[main] data could not be retrieved from request"
     CREATE_SUCCESS = "[create] {} successful"
     CREATE_MISSING_PARAM = "[create] {}, missing parameter"
     CREATE_NOT_AUTHORIZED = "[create] no permission"
