@@ -1,8 +1,8 @@
 # coding=utf-8
 
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, DateTime, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy import create_engine, Column, Integer, DateTime
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from marshmallow import Schema, fields
 from dotenv import load_dotenv
@@ -28,10 +28,18 @@ else:
                                                              os.environ.get('DEV_DATABASE_HOST'),
                                                              os.environ.get('DEV_DATABASE_NAME')))
 
+    user_engine = create_engine('postgresql://{}:{}@{}/{}'.format(os.environ.get('DEV_USER_DATABASE_USER'),
+                                                             os.environ.get('DEV_USER_DATABASE_PASSWORD'),
+                                                             os.environ.get('DEV_USER_DATABASE_HOST'),
+                                                             os.environ.get('DEV_USER_DATABASE_NAME')))
+
 Session = sessionmaker(bind=engine)
+Session_User = sessionmaker(bind=user_engine)
 
 Base = declarative_base()
 Base.metadata.create_all(engine)
+Base_User = declarative_base()
+Base_User.metadata.create_all(user_engine)
 
 
 class Entity:

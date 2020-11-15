@@ -1,11 +1,11 @@
-from .entity import Entity, EntitySchema, Base
+from .entity import Entity, EntitySchema, Base_User
 from marshmallow import fields
 from sqlalchemy import Column, String, Boolean, Integer
 from sqlalchemy.orm import relationship
 from enum import Enum
 
 
-class Role(Entity, Base):
+class Role(Entity, Base_User):
     __tablename__ = 'roles'
     name = Column(String, unique=True)
     default = Column(Boolean, default=False)

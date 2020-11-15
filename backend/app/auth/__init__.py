@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, make_response, current_app, url_f
 from sqlalchemy.exc import IntegrityError
 from itsdangerous import TimedJSONWebSignatureSerializer
 from ..entities.user import User, UserInsertSchema, UserAttributes
-from ..entities.entity import Session
+from ..entities.entity import Session_User
 from ..email import send_email
 from ..main.error_handling import investigate_integrity_error
 from ..utils import responses
@@ -11,18 +11,18 @@ from ..utils.responses import create_json_response, ResponseMessages
 auth = Blueprint('auth', __name__)
 
 
-# TODO change make_responses strings with enum
+# TODO check for code duplicates
 @auth.route('/check_login', methods=['GET', 'POST'])
 def check_login():
 
     data = request.get_json()
-    session = Session()
+    session_user = Session_User()
     if data.get(str(UserAttributes.USERNAME)):
-        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
-        session.close()
+        user = session_user.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
+        session_user.close()
     elif data.get(str(UserAttributes.EMAIL)):
-        user = session.query(User).filter_by(email=data[str(UserAttributes.EMAIL)]).first()
-        session.close()
+        user = session_user.query(User).filter_by(email=data[str(UserAttributes.EMAIL)]).first()
+        session_user.close()
     else:
         return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
                                                           ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
@@ -42,21 +42,21 @@ def create_user():
 
     data = request.get_json()
 
-    session = Session()
+    session_user = Session_User()
     user_schema = UserInsertSchema()
     user = User(**user_schema.load(data))
     try:
-        res = user_schema.dump(user.create(session))
+        res = user_schema.dump(user.create(session_user))
     except IntegrityError as ie:
-        session.rollback()
-        session.close()
+        session_user.rollback()
+        session_user.close()
         msg = investigate_integrity_error(ie)
         if msg is not None:
             return make_response(jsonify(create_json_response(responses.BAD_REQUEST_400,
                                                               ResponseMessages.AUTH_DUPLICATE_PARAMS,
                                                               msg), 422))
     finally:
-        session.close()
+        session_user.close()
 
     confirmation_token = user.generate_confirmation_token()
     url = url_for('auth.confirm', token=confirmation_token, _external=True)
@@ -79,12 +79,12 @@ def confirm(token):
                                                           ResponseMessages.AUTH_TOKEN_INVALID,
                                                           token), 422))
 
-    session = Session()
+    session_user = Session_User()
     user_id = data.get("confirm")
-    user = session.query(User).filter_by(id=user_id).first()
+    user = session_user.query(User).filter_by(id=user_id).first()
 
     if user is None:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
                                                           ResponseMessages.AUTH_TOKEN_INVALID,
                                                           token), 422))
@@ -93,8 +93,8 @@ def confirm(token):
                                                           ResponseMessages.AUTH_USER_CONFIRMED,
                                                           user), 200))
     else:
-        user.confirm(session)
-        session.close()
+        user.confirm(session_user)
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.SUCCESS_200,
                                                           ResponseMessages.AUTH_USER_CONFIRMED,
                                                           user), 201))
@@ -106,9 +106,9 @@ def resend_confirmation():
     data = request.get_json()
 
     if data.get(str(UserAttributes.USERNAME)):
-        session = Session()
-        curr_user = session.query(User).filter_by(username=data.get(str(UserAttributes.USERNAME))).first()
-        session.close()
+        session_user = Session_User()
+        curr_user = session_user.query(User).filter_by(username=data.get(str(UserAttributes.USERNAME))).first()
+        session_user.close()
     else:
         return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
                                                           ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
@@ -137,27 +137,27 @@ def resend_confirmation():
 def change_password():
 
     data = request.get_json()
-    session = Session()
+    session_user = Session_User()
 
     if data.get(str(UserAttributes.USERNAME)):
-        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
+        user = session_user.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
     else:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
                                                           ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
                                                           data), 422))
 
     if user is None:
-        session.close()
+        session_user.close()
         return make_response(jsonify('username does not exist', 422))
     elif user.verify_password(data["password_old"]):
-        user.update_password(data["password_new"], session, data[str(UserAttributes.UPDATED_BY)])
-        session.close()
+        user.update_password(data["password_new"], session_user, data[str(UserAttributes.UPDATED_BY)])
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.SUCCESS_200,
                                                           ResponseMessages.AUTH_PASSWORD_CHANGED,
                                                           user), 200))
     else:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
                                                           ResponseMessages.AUTH_WRONG_PASSWORD,
                                                           user), 422))
@@ -167,18 +167,18 @@ def change_password():
 def password_reset_request():
 
     data = request.get_json()
-    session = Session()
+    session_user = Session_User()
 
     if data.get(str(UserAttributes.USERNAME)):
-        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
+        user = session_user.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
     else:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
                                                           ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
                                                           data), 422))
 
     if user is None:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
                                                           ResponseMessages.AUTH_INVALID_PARAMS,
                                                           data), 422))
@@ -187,7 +187,7 @@ def password_reset_request():
         url = url_for('auth.password_reset', token=token, _external=True)
         send_email(user.email, 'Reset Your Password', 'auth/email/reset_password',
                    username=user.username, url=url)
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.SUCCESS_200,
                                                           ResponseMessages.AUTH_PW_REQUESTED,
                                                           user), 200))
@@ -197,18 +197,18 @@ def password_reset_request():
 def password_reset(token):
 
     data = request.get_json()
-    session = Session()
+    session_user = Session_User()
     if not data.get("password") or not data.get(str(UserAttributes.UPDATED_BY)):
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
                                                           ResponseMessages.AUTH_PASSWORD_NOT_PROVIDED,
                                                           data), 422))
-    elif User.reset_password(session, token, data):
-        session.close()
+    elif User.reset_password(session_user, token, data):
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.SUCCESS_200,
                                                           ResponseMessages.AUTH_RESET_SUCCESSFUL), 200))
     else:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.BAD_REQUEST_400,
                                                           ResponseMessages.AUTH_RESET_FAILED,
                                                           data), 400))
@@ -218,18 +218,18 @@ def password_reset(token):
 def change_email_request():
 
     data = request.get_json()
-    session = Session()
+    session_user = Session_User()
 
     if data.get(str(UserAttributes.USERNAME)):
-        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
+        user = session_user.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
     else:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
                                                           ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
                                                           data), 422))
 
     if user is None:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
                                                           ResponseMessages.AUTH_INVALID_PARAMS,
                                                           data), 422))
@@ -243,7 +243,7 @@ def change_email_request():
         url = url_for('auth.change_email', token=email_token, _external=True)
         send_email(data.get(str(UserAttributes.EMAIL)), 'Confirm Your Email Address', 'auth/email/change_email',
                    username=data.get(str(UserAttributes.USERNAME)), url=url)
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.SUCCESS_200,
                                                           ResponseMessages.AUTH_EMAIL_REQUESTED,
                                                           user), 200))
@@ -253,26 +253,26 @@ def change_email_request():
 def change_email(token):
 
     new_email, username, user_id = User.resolve_email_token(token)
-    session = Session()
+    session_user = Session_User()
 
     if username is not None:
-        user = session.query(User).filter_by(username=username).first()
+        user = session_user.query(User).filter_by(username=username).first()
     else:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.MISSING_PARAMETER_422,
                                                           ResponseMessages.AUTH_USERNAME_NOT_PROVIDED), 422))
 
     if user is None:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.INVALID_INPUT_422,
                                                           ResponseMessages.AUTH_INVALID_PARAMS), 422))
-    elif user.change_email(session, new_email, user_id, username):
-        session.close()
+    elif user.change_email(session_user, new_email, user_id, username):
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.SUCCESS_200,
                                                           ResponseMessages.AUTH_EMAIL_CHANGED,
                                                           user)), 200)
     else:
-        session.close()
+        session_user.close()
         return make_response(jsonify(create_json_response(responses.BAD_REQUEST_400,
                                                           ResponseMessages.AUTH_EMAIL_FAILED,
                                                           user)), 400)

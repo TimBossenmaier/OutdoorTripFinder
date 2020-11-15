@@ -5,11 +5,11 @@ from itsdangerous import TimedJSONWebSignatureSerializer
 from flask import current_app
 from datetime import datetime
 from enum import Enum
-from .entity import Entity, Base, EntitySchema
+from .entity import Entity, Base_User, EntitySchema
 from .role import Permission
 
 
-class User(Entity, Base):
+class User(Entity, Base_User):
     __tablename__ = 'users'
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
