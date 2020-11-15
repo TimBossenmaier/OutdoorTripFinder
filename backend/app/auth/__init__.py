@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, make_response, current_app, url_f
 from sqlalchemy.exc import IntegrityError
 from itsdangerous import TimedJSONWebSignatureSerializer
 from ..entities.user import User, UserInsertSchema, UserAttributes
-from ..entities.entity import Session_User
+from ..entities.entity import Session_User, Session
 from ..email import send_email
 from ..main.error_handling import investigate_integrity_error
 from ..utils import responses
@@ -57,6 +57,10 @@ def create_user():
                                                               msg), 422))
     finally:
         session_user.close()
+
+    session_cont = Session
+    sql = "CREATE USER {} WITH PASSWORD {}".format(data["user_name"], data["password"])
+    session_cont.execute(sql)
 
     confirmation_token = user.generate_confirmation_token()
     url = url_for('auth.confirm', token=confirmation_token, _external=True)
