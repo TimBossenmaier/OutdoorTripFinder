@@ -28,30 +28,23 @@ else:
                                                              os.environ.get('DEV_DATABASE_HOST'),
                                                              os.environ.get('DEV_DATABASE_NAME')))
 
-    user_engine = create_engine('postgresql://{}:{}@{}/{}'.format(os.environ.get('DEV_USER_DATABASE_USER'),
-                                                             os.environ.get('DEV_USER_DATABASE_PASSWORD'),
-                                                             os.environ.get('DEV_USER_DATABASE_HOST'),
-                                                             os.environ.get('DEV_USER_DATABASE_NAME')))
-
 Session = sessionmaker(bind=engine)
-Session_User = sessionmaker(bind=user_engine)
 
 Base = declarative_base()
 Base.metadata.create_all(engine)
-Base_User = declarative_base()
-Base_User.metadata.create_all(user_engine)
 
 
 class Entity:
-
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False, onupdate=datetime.now())
 
     def __init__(self):
-
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
+
+    def serialize(self):
+        pass
 
 
 class EntitySchema(Schema):
