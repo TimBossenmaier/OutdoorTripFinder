@@ -1,3 +1,5 @@
+import os
+
 from marshmallow import fields, Schema
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
@@ -5,11 +7,12 @@ from itsdangerous import TimedJSONWebSignatureSerializer
 from flask import current_app
 from datetime import datetime
 from enum import Enum
-from .entity import Entity, Base_User, EntitySchema
+
+from .entity import Entity, EntitySchema, Base
 from .role import Permission
 
 
-class User(Entity, Base_User):
+class User(Entity, Base):
     __tablename__ = 'users'
     username = Column(String, unique=True, nullable=False)
     email = Column(String, unique=True, nullable=False)
@@ -132,6 +135,12 @@ class User(Entity, Base_User):
 
     def is_admin(self):
         return self.can(Permission.ADMIN)
+
+    def serialize(self):
+
+        user = UserSchema().dump(self)
+
+        return user
 
 
 class UserInsertSchema(Schema):

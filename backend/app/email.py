@@ -12,7 +12,6 @@ def send_email(to, subject, template, **kwargs):
     msg["From"] = current_app.config['MAIL_SENDER']
     msg["To"] = to
 
-    # TODO get html shown properly
     body = open('app/templates/' + template + '.txt', 'r').read().format(**kwargs)
     html = open('app/templates/' + template + '.html', 'r').read().format(**kwargs)
 

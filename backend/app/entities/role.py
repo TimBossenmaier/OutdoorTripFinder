@@ -1,22 +1,24 @@
-from .entity import Entity, EntitySchema, Base_User
+from .entity import Entity, EntitySchema, Base
 from marshmallow import fields
 from sqlalchemy import Column, String, Boolean, Integer
 from sqlalchemy.orm import relationship
 from enum import Enum
 
 
-class Role(Entity, Base_User):
+class Role(Entity, Base):
     __tablename__ = 'roles'
     name = Column(String, unique=True)
     default = Column(Boolean, default=False)
     permissions = Column(Integer)
     users = relationship('User', backref='role')
+    last_updated_by = Column(String, nullable=False)
 
     def __init__(self, name, default, permissions, created_by):
-        Entity.__init__(self, created_by)
+        Entity.__init__(self)
         self.name = name
         self.default = default
         self.permissions = permissions
+        self.last_updated_by = created_by
 
     def __repr__(self):
         return '<Role %r' % self.name
