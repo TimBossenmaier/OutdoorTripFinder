@@ -1,5 +1,3 @@
-import os
-
 from marshmallow import fields, Schema
 from sqlalchemy.orm import relationship, backref
 from werkzeug.security import generate_password_hash, check_password_hash
