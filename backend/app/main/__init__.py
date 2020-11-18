@@ -3,6 +3,7 @@ from sqlalchemy import or_, and_
 from sqlalchemy.exc import IntegrityError
 
 from ..entities.entity import Session
+from ..entities.hike_relations import HikeRelation
 from ..entities.user import UserAttributes, User, Permission
 from ..entities.country import Country
 from ..entities.region import Region, RegionAttributes
@@ -41,6 +42,7 @@ def extract_user(user_data, session, class_type):
     if user_data.get(str(UserAttributes.USERNAME)):
         user = session.query(User).filter_by(username=user_data.get(str(UserAttributes.USERNAME))).first()
     else:
+        session.expunge_all()
         session.close()
         return make_response(create_json_response(responses.MISSING_PARAMETER_422,
                                                   ResponseMessages.CREATE_MISSING_PARAM,
@@ -52,10 +54,12 @@ def extract_user(user_data, session, class_type):
 
 def check_integrity_error(ie, session, class_type):
     session.rollback()
+    session.expunge_all()
     session.close()
 
     msg = investigate_integrity_error(ie)
     if msg is not None:
+
         return make_response(create_json_response(responses.INVALID_INPUT_422,
                                                   ResponseMessages.CREATE_DUPLICATE_PARAMS,
                                                   msg,
@@ -73,6 +77,8 @@ def create(req, class_type):
     if user_data is not None:
         expected_user = extract_user(user_data, session, class_type)
     else:
+        session.expunge_all()
+        session.close()
         return make_response(create_json_response(responses.BAD_REQUEST_400,
                                                   ResponseMessages.MAIN_NO_USER_INFORMATION,
                                                   None), 400)
@@ -84,6 +90,8 @@ def create(req, class_type):
         return resp
 
     if data is None:
+        session.expunge_all()
+        session.close()
         return make_response(create_json_response(responses.BAD_REQUEST_400,
                                                   ResponseMessages.MAIN_NO_DATA,
                                                   None), 400)
@@ -108,6 +116,7 @@ def create(req, class_type):
                 return resp
 
         finally:
+            session.expunge_all()
             session.close()
 
         return make_response(create_json_response(responses.SUCCESS_201,
@@ -115,6 +124,8 @@ def create(req, class_type):
                                                   res,
                                                   class_type.__name__), 201)
     else:
+        session.expunge_all()
+        session.close()
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.CREATE_NOT_AUTHORIZED,
                                                   user_data), 403)
@@ -128,6 +139,8 @@ def update(req, class_type):
     if user_data is not None:
         expected_user = extract_user(user_data, session, class_type)
     else:
+        session.expunge_all()
+        session.close()
         return make_response(create_json_response(responses.BAD_REQUEST_400,
                                                   ResponseMessages.MAIN_NO_USER_INFORMATION,
                                                   None), 400)
@@ -139,6 +152,8 @@ def update(req, class_type):
         return resp
 
     if data is None:
+        session.expunge_all()
+        session.close()
         return make_response(create_json_response(responses.BAD_REQUEST_400,
                                                   ResponseMessages.MAIN_NO_DATA,
                                                   None), 400)
@@ -161,18 +176,21 @@ def update(req, class_type):
 
             finally:
                 res = entity.convert_to_insert_schema()
+                session.expunge_all()
                 session.close()
             return make_response(create_json_response(responses.SUCCESS_200,
                                                       ResponseMessages.UPDATE_SUCCESS,
                                                       res,
                                                       class_type.__name__), 200)
         else:
+            session.expunge_all()
             session.close()
             return make_response(create_json_response(responses.INVALID_INPUT_422,
                                                       ResponseMessages.UPDATE_FAILED,
                                                       data,
                                                       class_type.__name__), 422)
     else:
+        session.expunge_all()
         session.close()
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.UPDATE_NOT_AUTHORIZED,
@@ -188,6 +206,8 @@ def list_all(class_type, req=None):
         _, data = extract_json_data(req, class_type)
 
         if data is None:
+            session.expunge_all()
+            session.close()
             return make_response(create_json_response(responses.BAD_REQUEST_400,
                                                       ResponseMessages.MAIN_NO_DATA,
                                                       None), 400)
@@ -204,6 +224,8 @@ def list_all(class_type, req=None):
     elif term == '' and keys is not None:
 
         if class_type == Country:
+            session.expunge_all()
+            session.close()
             return make_response(create_json_response(responses.INVALID_INPUT_422,
                                                       ResponseMessages.LIST_INVALID_INPUT,
                                                       keys,
@@ -220,6 +242,8 @@ def list_all(class_type, req=None):
                     .order_by(class_type.id.asc()) \
                     .all()
             else:
+                session.expunge_all()
+                session.close()
                 make_response(create_json_response(responses.INVALID_INPUT_422,
                                                    ResponseMessages.LIST_INVALID_INPUT,
                                                    keys,
@@ -228,6 +252,8 @@ def list_all(class_type, req=None):
     elif term != '' and keys is not None:
 
         if class_type == Country:
+            session.expunge_all()
+            session.close()
             return make_response(create_json_response(responses.INVALID_INPUT_422,
                                                       ResponseMessages.LIST_INVALID_INPUT,
                                                       keys,
@@ -252,10 +278,12 @@ def list_all(class_type, req=None):
                         .order_by(class_type.id.asc()) \
                         .all()
             else:
-                make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                   ResponseMessages.LIST_INVALID_INPUT,
-                                                   keys,
-                                                   class_type.__name__), 422)
+                session.expunge_all()
+                session.close()
+                return make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                        ResponseMessages.LIST_INVALID_INPUT,
+                                                        keys,
+                                                        class_type.__name__), 422)
     elif typ is not None:
         if class_type == Location and typ.get(str(LocationAttributes.LOCATION_TYPE_ID)):
             res = session.query(Location) \
@@ -268,6 +296,8 @@ def list_all(class_type, req=None):
                 .order_by(class_type.id.asc()) \
                 .all()
         else:
+            session.expunge_all()
+            session.close()
             return make_response(create_json_response(responses.INVALID_INPUT_422,
                                                       ResponseMessages.LIST_INVALID_INPUT,
                                                       typ,
@@ -276,6 +306,8 @@ def list_all(class_type, req=None):
         res = session.query(class_type).order_by(class_type.id.asc()).all()
 
     if res is None:
+        session.expunge_all()
+        session.close()
         return make_response(create_json_response(responses.INVALID_INPUT_422,
                                                   ResponseMessages.LIST_EMPTY,
                                                   None,
@@ -293,6 +325,8 @@ def list_all(class_type, req=None):
                                                  else (str(attributes.NAME), str(attributes.ID))))
         entities = schema.dump(res)
 
+        session.expunge_all()
+        session.close()
         return make_response(create_json_response(responses.SUCCESS_200,
                                                   ResponseMessages.LIST_SUCCESS,
                                                   entities,
@@ -654,3 +688,59 @@ def find_tour_by_term():
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.FIND_NOT_AUTHORIZED,
                                                   user_data), 400)
+
+
+@main.route('/hike', methods=['POST'])
+def add_hike():
+
+    user_data, data = extract_json_data(rq, HikeRelation)
+
+    session = Session()
+
+    if user_data is not None:
+        expected_user = extract_user(user_data, session, HikeRelation)
+    else:
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
+                                                  None), 400)
+
+    if isinstance(expected_user, User):
+        user = expected_user
+    else:
+        resp = expected_user
+        return resp
+
+    if data is None:
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_DATA,
+                                                  None), 400)
+    else:
+        activity = session.query(Activity).filter_by(activity_id=data.get('activity_id')).first()
+
+        if activity is None:
+            session.expunge_all()
+            session.close()
+            return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                      ResponseMessages.MAIN_NO_DATA,
+                                                      None), 400)
+
+    if user is not None and user.can(Permission.FOLLOW):
+        hike = user.add_hike(activity, session)
+        res = hike.serialize()
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.SUCCESS_201,
+                                                  ResponseMessages.CREATE_SUCCESS,
+                                                  res,
+                                                  HikeRelation), 201)
+
+    else:
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.UNAUTHORIZED_403,
+                                                  ResponseMessages.CREATE_NOT_AUTHORIZED,
+                                                  user_data), 403)

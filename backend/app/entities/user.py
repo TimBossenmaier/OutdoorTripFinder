@@ -97,6 +97,7 @@ class User(Entity, Base):
         if not self.has_hiked(activity):
             hike = HikeRelation(self.id, activity.id)
             hike.create(session)
+        return hike
 
     def delete_hike(self, activity, session):
         if self.has_hiked(activity):
