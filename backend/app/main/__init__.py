@@ -259,14 +259,15 @@ def list_all(class_type, req=None):
                                                       keys,
                                                       class_type.__name__), 422)
         else:
-            if keys.get(str(RegionAttributes.COUNTRY_ID) if class_type == Region else str(LocationAttributes.REGION_ID)):
+            if keys.get(
+                    str(RegionAttributes.COUNTRY_ID) if class_type == Region else str(LocationAttributes.REGION_ID)):
                 search_term = '%{}%'.format(term)
                 if keys.get(str(RegionAttributes.COUNTRY_ID)) is not None:
                     res = session.query(Region).filter(
                         and_(
                             Region.country_id.in_(list(keys.get(str(RegionAttributes.COUNTRY_ID)))),
                             Region.name.ilike(search_term))
-                        ) \
+                    ) \
                         .order_by(class_type.id.asc()) \
                         .all()
                 elif keys.get(str(LocationAttributes.REGION_ID)) is not None:
@@ -274,16 +275,16 @@ def list_all(class_type, req=None):
                         and_(
                             Location.region_id.in_(keys.get(str(LocationAttributes.REGION_ID))),
                             Location.name.ilike(search_term))
-                        ) \
+                    ) \
                         .order_by(class_type.id.asc()) \
                         .all()
             else:
                 session.expunge_all()
                 session.close()
                 return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                        ResponseMessages.LIST_INVALID_INPUT,
-                                                        keys,
-                                                        class_type.__name__), 422)
+                                                          ResponseMessages.LIST_INVALID_INPUT,
+                                                          keys,
+                                                          class_type.__name__), 422)
     elif typ is not None:
         if class_type == Location and typ.get(str(LocationAttributes.LOCATION_TYPE_ID)):
             res = session.query(Location) \
@@ -692,7 +693,6 @@ def find_tour_by_term():
 
 @main.route('/hike', methods=['POST'])
 def add_hike():
-
     user_data, data = extract_json_data(rq, HikeRelation)
 
     session = Session()
@@ -719,7 +719,7 @@ def add_hike():
                                                   ResponseMessages.MAIN_NO_DATA,
                                                   None), 400)
     else:
-        activity = session.query(Activity).filter_by(activity_id=data.get('activity_id')).first()
+        activity = session.query(Activity).filter(Activity.id == data.get('activity_id')).first()
 
         if activity is None:
             session.expunge_all()
@@ -736,6 +736,60 @@ def add_hike():
         return make_response(create_json_response(responses.SUCCESS_201,
                                                   ResponseMessages.CREATE_SUCCESS,
                                                   res,
+                                                  HikeRelation), 201)
+
+    else:
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.UNAUTHORIZED_403,
+                                                  ResponseMessages.CREATE_NOT_AUTHORIZED,
+                                                  user_data), 403)
+
+
+@main.rote('/un_hike', methods=['POST'])
+def rem_hike():
+    user_data, data = extract_json_data(rq, HikeRelation)
+
+    session = Session()
+
+    if user_data is not None:
+        expected_user = extract_user(user_data, session, HikeRelation)
+    else:
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
+                                                  None), 400)
+
+    if isinstance(expected_user, User):
+        user = expected_user
+    else:
+        resp = expected_user
+        return resp
+
+    if data is None:
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                  ResponseMessages.MAIN_NO_DATA,
+                                                  None), 400)
+    else:
+        activity = session.query(Activity).filter(Activity.id == data.get('activity_id')).first()
+
+        if activity is None:
+            session.expunge_all()
+            session.close()
+            return make_response(create_json_response(responses.BAD_REQUEST_400,
+                                                      ResponseMessages.MAIN_NO_DATA,
+                                                      None), 400)
+
+    if user is not None and user.can(Permission.FOLLOW):
+        user.delete_hike(activity, session)
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.SUCCESS_201,
+                                                  ResponseMessages.CREATE_SUCCESS,
+                                                  None,
                                                   HikeRelation), 201)
 
     else:
