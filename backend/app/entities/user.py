@@ -1,6 +1,7 @@
 import os
 
 from marshmallow import fields, Schema
+from sqlalchemy.orm import relationship, backref
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
 from itsdangerous import TimedJSONWebSignatureSerializer
@@ -9,6 +10,7 @@ from datetime import datetime
 from enum import Enum
 
 from .entity import Entity, EntitySchema, Base
+from .hike_relations import HikeRelation
 from .role import Permission
 
 
@@ -20,6 +22,8 @@ class User(Entity, Base):
     role_id = Column(Integer, ForeignKey('roles.id'))
     confirmed = Column(Boolean, default=False)
     last_updated_by = Column(String, nullable=False)
+    hiked = relationship('HikeRelationship', foreign_keys=[HikeRelation.activity_id],
+                         backref=backref('hiked', lazy='joined'), lazy='dynamic')
 
     def __init__(self, username, email, password, role_id, created_by):
         Entity.__init__(self)
@@ -88,6 +92,21 @@ class User(Entity, Base):
     def generate_email_token(self, new_email, username, expiration=86400):
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expiration)
         return s.dumps({'change_email': self.id, 'email': new_email, 'username': username}).decode('utf-8')
+
+    def add_hike(self, activity, session):
+        if not self.has_hiked(activity):
+            hike = HikeRelation(self.id, activity.id)
+            hike.create(session)
+
+    def delete_hike(self, activity, session):
+        if self.has_hiked(activity):
+            hike = HikeRelation(self.id, activity.id)
+            hike.delete(session)
+
+    def has_hiked(self, activity):
+        if activity.id is None:
+            return False
+        return self.hiked.filter_by(activity_id=activity.id).first is not None
 
     @staticmethod
     def reset_password(session, token, json):
