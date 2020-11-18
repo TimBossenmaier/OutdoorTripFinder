@@ -736,7 +736,7 @@ def add_hike():
         return make_response(create_json_response(responses.SUCCESS_201,
                                                   ResponseMessages.CREATE_SUCCESS,
                                                   res,
-                                                  HikeRelation), 201)
+                                                  HikeRelation.__name__), 201)
 
     else:
         session.expunge_all()
@@ -746,7 +746,7 @@ def add_hike():
                                                   user_data), 403)
 
 
-@main.rote('/un_hike', methods=['POST'])
+@main.route('/un_hike', methods=['POST'])
 def rem_hike():
     user_data, data = extract_json_data(rq, HikeRelation)
 
@@ -790,7 +790,7 @@ def rem_hike():
         return make_response(create_json_response(responses.SUCCESS_201,
                                                   ResponseMessages.CREATE_SUCCESS,
                                                   None,
-                                                  HikeRelation), 201)
+                                                  HikeRelation.__name__), 201)
 
     else:
         session.expunge_all()

@@ -9,6 +9,7 @@ from flask import current_app
 from datetime import datetime
 from enum import Enum
 
+from .activity import Activity
 from .entity import Entity, EntitySchema, Base
 from .hike_relations import HikeRelation
 from .role import Permission
@@ -22,8 +23,7 @@ class User(Entity, Base):
     role_id = Column(Integer, ForeignKey('roles.id'))
     confirmed = Column(Boolean, default=False)
     last_updated_by = Column(String, nullable=False)
-    hiked = relationship('HikeRelationship', foreign_keys=[HikeRelation.activity_id],
-                         backref=backref('hiked', lazy='joined'), lazy='dynamic')
+    hiked = relationship(HikeRelation, foreign_keys=[HikeRelation.user_id], lazy='dynamic')
 
     def __init__(self, username, email, password, role_id, created_by):
         Entity.__init__(self)
@@ -97,17 +97,17 @@ class User(Entity, Base):
         if not self.has_hiked(activity):
             hike = HikeRelation(self.id, activity.id)
             hike.create(session)
-        return hike
+            return hike
 
     def delete_hike(self, activity, session):
         if self.has_hiked(activity):
-            hike = HikeRelation(self.id, activity.id)
+            hike = session.query(HikeRelation).filter(HikeRelation.activity_id == activity.id).first()
             hike.delete(session)
 
     def has_hiked(self, activity):
         if activity.id is None:
             return False
-        return self.hiked.filter_by(activity_id=activity.id).first is not None
+        return self.hiked.filter(Activity.id == activity.id).first() is not None
 
     @staticmethod
     def reset_password(session, token, json):
