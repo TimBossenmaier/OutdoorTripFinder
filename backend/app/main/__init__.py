@@ -315,6 +315,10 @@ def list_all(class_type, req=None):
             schema = LocationActivity.get_schema(many=True, only=[str(attributes.ID),
                                                                   str(attributes.ACTIVITY_ID),
                                                                   str(attributes.LOCATION_ID)])
+        elif class_type == HikeRelation:
+            schema = HikeRelation.get_schema(many=True, only=(str(attributes.ID),
+                                                              str(attributes.USER_ID),
+                                                              str(attributes.ACTIVITY_ID)))
         else:
             schema = class_type.get_schema(many=True,
                                            only=((str(attributes.NAME), str(attributes.ID), str(attributes.REGION_ID))
@@ -508,6 +512,12 @@ def list_activity_param():
 @main.route('/list/location', methods=['GET', 'POST'])
 def list_location():
     res = list_all(Location)
+
+    return res
+
+@main.route('/list/hikerelation', methods=['GET', 'POST'])
+def list_hikerelation():
+    res = list_all(HikeRelation)
 
     return res
 
