@@ -96,6 +96,9 @@ class User(Entity, Base):
             hike = HikeRelation(self.id, activity.id)
             hike.create(session)
             return hike
+        else:
+            hike = self.hiked.filter(HikeRelation.activity_id == activity.id).first()
+            return hike
 
     def delete_hike(self, activity, session):
         if self.has_hiked(activity):
@@ -105,7 +108,7 @@ class User(Entity, Base):
     def has_hiked(self, activity):
         if activity.id is None:
             return False
-        return self.hiked.filter(Activity.id == activity.id).first() is not None
+        return self.hiked.filter(HikeRelation.activity_id == activity.id).first() is not None
 
     @staticmethod
     def reset_password(session, token, json):

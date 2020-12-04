@@ -515,6 +515,7 @@ def list_location():
 
     return res
 
+
 @main.route('/list/hikerelation', methods=['GET', 'POST'])
 def list_hikerelation():
     res = list_all(HikeRelation)

@@ -36,6 +36,13 @@ class HikeRelation(Entity, Base):
         schema = HikeRelationSchema()
         return schema.dump(self)
 
+    def serialize(self):
+
+        hr = HikeRelationSchema().dump(self)
+
+        return hr
+
+
     @staticmethod
     def get_insert_schema():
         return HikeRelationSchema()
