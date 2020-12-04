@@ -36,6 +36,15 @@ class Country(Entity, Base):
         session.add(self)
         session.commit()
 
+    def convert_to_insert_schema(self):
+        schema = CountryInsertSchema()
+        return schema.dump(self)
+
+    def serialize(self):
+        country = CountrySchema().dump(self)
+
+        return country
+
     @staticmethod
     def get_insert_schema():
         return CountryInsertSchema()
@@ -47,10 +56,6 @@ class Country(Entity, Base):
     @staticmethod
     def get_attributes():
         return CountryAttributes
-
-    def convert_to_insert_schema(self):
-        schema = CountryInsertSchema()
-        return schema.dump(self)
 
 
 class CountrySchema(EntitySchema):

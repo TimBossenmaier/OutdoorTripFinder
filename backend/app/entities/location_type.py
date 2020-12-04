@@ -37,6 +37,15 @@ class LocationType(Entity, Base):
         session.add(self)
         session.commit()
 
+    def convert_to_insert_schema(self):
+        schema = LocationTypeInsertSchema()
+        return schema.dump(self)
+
+    def serialize(self):
+        lt = LocationTypeSchema().dump(self)
+
+        return lt
+
     @staticmethod
     def get_insert_schema():
         return LocationTypeInsertSchema()
@@ -49,9 +58,6 @@ class LocationType(Entity, Base):
     def get_attributes():
         return LocationTypeAttributes
 
-    def convert_to_insert_schema(self):
-        schema = LocationTypeInsertSchema()
-        return schema.dump(self)
 
 
 class LocationTypeSchema(EntitySchema):

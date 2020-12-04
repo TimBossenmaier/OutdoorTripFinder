@@ -42,7 +42,6 @@ class HikeRelation(Entity, Base):
 
         return hr
 
-
     @staticmethod
     def get_insert_schema():
         return HikeRelationSchema()

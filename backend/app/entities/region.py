@@ -41,6 +41,15 @@ class Region(Entity, Base):
         session.add(self)
         session.commit()
 
+    def convert_to_insert_schema(self):
+        schema = RegionInsertSchema()
+        return schema.dump(self)
+
+    def serialize(self):
+        reg = RegionSchema().dump(self)
+
+        return reg
+
     @staticmethod
     def get_insert_schema():
         return RegionInsertSchema()
@@ -52,10 +61,6 @@ class Region(Entity, Base):
     @staticmethod
     def get_attributes():
         return RegionAttributes
-
-    def convert_to_insert_schema(self):
-        schema = RegionInsertSchema()
-        return schema.dump(self)
 
 
 class RegionSchema(EntitySchema):

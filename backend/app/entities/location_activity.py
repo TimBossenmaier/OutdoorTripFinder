@@ -42,6 +42,15 @@ class LocationActivity(Entity, Base):
         session.add(self)
         session.commit()
 
+    def convert_to_insert_schema(self):
+        schema = LocationActivityInsertSchema()
+        return schema.dump(self)
+
+    def serialize(self):
+        la = LocationActivitySchema().dump(self)
+
+        return la
+
     @staticmethod
     def get_insert_schema():
         return LocationActivityInsertSchema()
@@ -53,10 +62,6 @@ class LocationActivity(Entity, Base):
     @staticmethod
     def get_attributes():
         return LocationActivityAttributes
-
-    def convert_to_insert_schema(self):
-        schema = LocationActivityInsertSchema()
-        return schema.dump(self)
 
 
 class LocationActivitySchema(EntitySchema):

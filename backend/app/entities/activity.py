@@ -50,6 +50,15 @@ class Activity(Entity, Base):
         session.add(self)
         session.commit()
 
+    def convert_to_insert_schema(self):
+        schema = ActivityInsertSchema()
+        return schema.dump(self)
+
+    def serialize(self):
+        act = ActivitySchema().dump(self)
+
+        return act
+
     @staticmethod
     def get_insert_schema():
         return ActivityInsertSchema()
@@ -68,10 +77,6 @@ class Activity(Entity, Base):
     @staticmethod
     def get_attributes():
         return ActivityAttributes
-
-    def convert_to_insert_schema(self):
-        schema = ActivityInsertSchema()
-        return schema.dump(self)
 
 
 class ActivitySchema(EntitySchema):
