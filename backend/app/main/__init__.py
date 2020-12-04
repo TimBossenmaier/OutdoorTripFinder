@@ -69,7 +69,7 @@ def check_integrity_error(ie, session, class_type):
         return None
 
 
-def create(req, class_type):
+def extract_from_req(req, class_type):
     user_data, data = extract_json_data(req, class_type)
 
     session = Session()
@@ -95,6 +95,13 @@ def create(req, class_type):
         return make_response(create_json_response(responses.BAD_REQUEST_400,
                                                   ResponseMessages.MAIN_NO_DATA,
                                                   None), 400)
+
+    return user_data, user, data, session
+
+
+def create(req, class_type):
+
+    user_data, user, data, session = extract_from_req(req, class_type)
 
     if user is not None and user.can(Permission.CREATE):
         data.update({'created_by': user.id})
@@ -132,31 +139,8 @@ def create(req, class_type):
 
 
 def update(req, class_type):
-    user_data, data = extract_json_data(req, class_type)
 
-    session = Session()
-
-    if user_data is not None:
-        expected_user = extract_user(user_data, session, class_type)
-    else:
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
-                                                  None), 400)
-
-    if isinstance(expected_user, User):
-        user = expected_user
-    else:
-        resp = expected_user
-        return resp
-
-    if data is None:
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_DATA,
-                                                  None), 400)
+    user_data, user, data, session = extract_from_req(req, class_type)
 
     if user is not None and user.can(Permission.CREATE):
         entity = session.query(class_type).filter_by(id=data.get(str(class_type.get_attributes().ID))).first()
@@ -518,27 +502,8 @@ def list_location():
 
 @main.route('/find_tour', methods=['GET', 'POST'])
 def find_tour():
-    user_data, data = extract_json_data(rq, Activity)
 
-    session = Session()
-
-    if user_data is not None:
-        expected_user = extract_user(user_data, session, Activity)
-    else:
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
-                                                  None), 400)
-
-    if isinstance(expected_user, User):
-        user = expected_user
-    else:
-        resp = expected_user
-        return resp
-
-    if data is None:
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_DATA,
-                                                  None), 400)
+    user_data, user, data, session = extract_from_req(rq, Activity)
 
     if user is not None and user.can(Permission.READ):
 
@@ -632,27 +597,8 @@ def find_tour():
 
 @main.route('/find_tour_by_term', methods=['GET', 'POST'])
 def find_tour_by_term():
-    user_data, data = extract_json_data(rq, Activity)
 
-    session = Session()
-
-    if user_data is not None:
-        expected_user = extract_user(user_data, session, Activity)
-    else:
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
-                                                  None), 400)
-
-    if isinstance(expected_user, User):
-        user = expected_user
-    else:
-        resp = expected_user
-        return resp
-
-    if data is None:
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_DATA,
-                                                  None), 400)
+    user_data, user, data, session = extract_from_req(rq, Activity)
 
     if user is not None and user.can(Permission.READ):
 
@@ -693,40 +639,17 @@ def find_tour_by_term():
 
 @main.route('/hike', methods=['POST'])
 def add_hike():
-    user_data, data = extract_json_data(rq, HikeRelation)
 
-    session = Session()
+    user_data, user, data, session = extract_from_req(rq, HikeRelation)
 
-    if user_data is not None:
-        expected_user = extract_user(user_data, session, HikeRelation)
-    else:
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
-                                                  None), 400)
+    activity = session.query(Activity).filter(Activity.id == data.get('activity_id')).first()
 
-    if isinstance(expected_user, User):
-        user = expected_user
-    else:
-        resp = expected_user
-        return resp
-
-    if data is None:
+    if activity is None:
         session.expunge_all()
         session.close()
         return make_response(create_json_response(responses.BAD_REQUEST_400,
                                                   ResponseMessages.MAIN_NO_DATA,
                                                   None), 400)
-    else:
-        activity = session.query(Activity).filter(Activity.id == data.get('activity_id')).first()
-
-        if activity is None:
-            session.expunge_all()
-            session.close()
-            return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                      ResponseMessages.MAIN_NO_DATA,
-                                                      None), 400)
 
     if user is not None and user.can(Permission.FOLLOW):
         hike = user.add_hike(activity, session)
@@ -748,40 +671,17 @@ def add_hike():
 
 @main.route('/un_hike', methods=['POST'])
 def rem_hike():
-    user_data, data = extract_json_data(rq, HikeRelation)
 
-    session = Session()
+    user_data, user, data, session = extract_from_req(rq, HikeRelation)
 
-    if user_data is not None:
-        expected_user = extract_user(user_data, session, HikeRelation)
-    else:
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
-                                                  None), 400)
+    activity = session.query(Activity).filter(Activity.id == data.get(ActivityAttributes.ID)).first()
 
-    if isinstance(expected_user, User):
-        user = expected_user
-    else:
-        resp = expected_user
-        return resp
-
-    if data is None:
+    if activity is None:
         session.expunge_all()
         session.close()
         return make_response(create_json_response(responses.BAD_REQUEST_400,
                                                   ResponseMessages.MAIN_NO_DATA,
                                                   None), 400)
-    else:
-        activity = session.query(Activity).filter(Activity.id == data.get('activity_id')).first()
-
-        if activity is None:
-            session.expunge_all()
-            session.close()
-            return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                      ResponseMessages.MAIN_NO_DATA,
-                                                      None), 400)
 
     if user is not None and user.can(Permission.FOLLOW):
         user.delete_hike(activity, session)
