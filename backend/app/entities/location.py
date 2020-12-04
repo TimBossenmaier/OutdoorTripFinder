@@ -71,8 +71,6 @@ class Location(Entity, Base):
         return LocationAttributes
 
 
-
-
 class LocationSchema(EntitySchema):
     lat = fields.Float()
     long = fields.Float()

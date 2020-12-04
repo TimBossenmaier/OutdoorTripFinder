@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from enum import Enum
 
+from .comment import Comment
 from .entity import Entity, Base, EntitySchema
 
 
@@ -21,6 +22,7 @@ class Activity(Entity, Base):
     last_updated_by = Column(Integer, ForeignKey('users.id'), nullable=False)
     activity_type = relationship('ActivityType', foreign_keys=activity_type_id)
     locations = relationship('LocationActivity', uselist=True, backref='activities')
+    comments = relationship(Comment, foreign_keys=[Comment.activity_id], lazy='dynamic')
 
     def __init__(self, name, description, activity_type_id, source, save_path, multi_day, created_by):
         Entity.__init__(self)

@@ -8,6 +8,7 @@ from datetime import datetime
 from enum import Enum
 
 from .activity import Activity
+from .comment import Comment
 from .entity import Entity, EntitySchema, Base
 from .hike_relations import HikeRelation
 from .role import Permission
@@ -22,6 +23,7 @@ class User(Entity, Base):
     confirmed = Column(Boolean, default=False)
     last_updated_by = Column(String, nullable=False)
     hiked = relationship(HikeRelation, foreign_keys=[HikeRelation.user_id], lazy='dynamic')
+    comments = relationship(Comment, foreign_keys=[Comment.author_id], lazy='dynamic')
 
     def __init__(self, username, email, password, role_id, created_by):
         Entity.__init__(self)

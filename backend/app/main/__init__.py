@@ -12,6 +12,7 @@ from ..entities.activity_type import ActivityType
 from ..entities.location_activity import LocationActivity
 from ..entities.activity import Activity, ActivityAttributes
 from ..entities.location import Location, LocationAttributes
+from ..entities.comment import Comment
 from ..main.error_handling import investigate_integrity_error
 from ..utils import responses
 from ..utils.responses import create_json_response, ResponseMessages
@@ -319,6 +320,11 @@ def list_all(class_type, req=None):
             schema = HikeRelation.get_schema(many=True, only=(str(attributes.ID),
                                                               str(attributes.USER_ID),
                                                               str(attributes.ACTIVITY_ID)))
+        elif class_type == Comment:
+            schema = Comment.get_schema(many=True, only=(str(attributes.ID),
+                                                         str(attributes.BODY),
+                                                         str(attributes.AUTHOR_ID),
+                                                         str(attributes.ACTIVITY_ID)))
         else:
             schema = class_type.get_schema(many=True,
                                            only=((str(attributes.NAME), str(attributes.ID), str(attributes.REGION_ID))
@@ -383,6 +389,13 @@ def create_location():
     return res
 
 
+@main.route('/create/comment', methods=["GET", "POST"])
+def create_comment():
+    res = create(rq, Comment)
+
+    return res
+
+
 @main.route('/update/country', methods=['GET', 'POST'])
 def update_country():
     resp = update(rq, Country)
@@ -428,6 +441,13 @@ def update_activity():
 @main.route('/update/location', methods=['GET', 'POST'])
 def update_location():
     res = update(rq, Location)
+
+    return res
+
+
+@main.route('/update/comment', methods=['GET', 'POST'])
+def update_comment():
+    res = update(rq, Comment)
 
     return res
 
@@ -512,6 +532,13 @@ def list_activity_param():
 @main.route('/list/location', methods=['GET', 'POST'])
 def list_location():
     res = list_all(Location)
+
+    return res
+
+
+@main.route('/list/comment', methods=['GET', 'POST'])
+def list_comment():
+    res = list_all(Comment)
 
     return res
 

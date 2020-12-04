@@ -12,6 +12,8 @@ from app.entities.location_activity import LocationActivity
 from app.entities.location import Location
 from app.entities.activity import Activity
 from app.entities.activity_type import ActivityType
+from app.entities.hike_relations import HikeRelation
+from app.entities.comment import Comment
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 migrate = Migrate(app, db)
@@ -20,7 +22,8 @@ migrate = Migrate(app, db)
 @app.shell_context_processor
 def make_shell_context():
     return dict(db=db, User=User, Role=Role, Country=Country, Region=Region, LocationType=LocationType,
-                LocationActivity=LocationActivity, Location=Location, Activity=Activity, ActivityType=ActivityType)
+                LocationActivity=LocationActivity, Location=Location, Activity=Activity, ActivityType=ActivityType,
+                HikeRelation=HikeRelation, Comment=Comment)
 
 
 @app.cli.command()
