@@ -21,6 +21,7 @@ class User(Entity, Base):
     password_hash = Column(String(256))
     role_id = Column(Integer, ForeignKey('roles.id'))
     confirmed = Column(Boolean, default=False)
+    session_id = Column(String, nullable=False)
     last_updated_by = Column(String, nullable=False)
     hiked = relationship(HikeRelation, foreign_keys=[HikeRelation.user_id], lazy='dynamic')
     comments = relationship(Comment, foreign_keys=[Comment.author_id], lazy='dynamic')
@@ -31,6 +32,7 @@ class User(Entity, Base):
         self.email = email
         self.password_hash = generate_password_hash(password)
         self.role_id = role_id
+        self.session_id = rand_alphanumeric()
         self.last_updated_by = created_by
 
     def __repr__(self):
@@ -57,7 +59,7 @@ class User(Entity, Base):
 
     def update_password(self, password, session, updated_by):
         self.password_hash = generate_password_hash(password)
-
+        self.username = rand_alphanumeric
         self.update(session, updated_by=updated_by)
 
     def verify_password(self, password):
@@ -112,22 +114,6 @@ class User(Entity, Base):
             return False
         return self.hiked.filter(HikeRelation.activity_id == activity.id).first() is not None
 
-    @staticmethod
-    def reset_password(session, token, json):
-
-        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
-
-        try:
-            data = s.loads(token.encode('utf-8'))
-        except:
-            return False
-
-        user = session.query(User).get(data.get('reset'))
-        if user is None:
-            return False
-        user.update_password(json["password"], session, json[str(UserAttributes.UPDATED_BY)])
-        return True
-
     def change_email(self, session, new_email, user_id, updated_by):
 
         if user_id != self.id:
@@ -149,6 +135,12 @@ class User(Entity, Base):
 
         return user
 
+    def generate_auth_token(self, expiration, session):
+        self.session_id = rand_alphanumeric()
+        self.update(session, self.username)
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expires_in=expiration)
+        return s.dumps({'session_id': self.session_id}).decode('utf-8')
+
     @staticmethod
     def resolve_email_token(token):
 
@@ -164,6 +156,31 @@ class User(Entity, Base):
         user_id = data.get('change_email')
 
         return new_email, username, user_id
+
+    @staticmethod
+    def reset_password(session, token, json):
+
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+
+        try:
+            data = s.loads(token.encode('utf-8'))
+        except:
+            return False
+
+        user = session.query(User).get(data.get('reset'))
+        if user is None:
+            return False
+        user.update_password(json["password"], session, user.username)
+        return True
+
+    @staticmethod
+    def verify_auth_token(token, session):
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return None
+        return session.query(User).filter(User.session_id == data['session_id']).first()
 
 
 class UserInsertSchema(Schema):
@@ -186,6 +203,7 @@ class UserAttributes(Enum):
     EMAIL = 'email'
     PASSWORD_HASH = 'password_hash'
     ROLE_ID = 'role_id'
+    SESSION_ID = 'session_id'
     CONFIRMED = 'confirmed'
     ID = 'id'
     CREATED_AT = 'created_at'
