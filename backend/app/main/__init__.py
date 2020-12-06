@@ -2,56 +2,28 @@ from flask import Blueprint, request as rq, make_response, Response
 from sqlalchemy import or_, and_
 from sqlalchemy.exc import IntegrityError
 
-from ..entities.entity import Session
-from ..entities.hike_relations import HikeRelation
-from ..entities.user import UserAttributes, User, Permission
-from ..entities.country import Country
-from ..entities.region import Region, RegionAttributes
-from ..entities.location_type import LocationType
-from ..entities.activity_type import ActivityType
-from ..entities.location_activity import LocationActivity
-from ..entities.activity import Activity, ActivityAttributes
-from ..entities.location import Location, LocationAttributes
-from ..entities.comment import Comment
-from ..main.error_handling import investigate_integrity_error
-from ..utils import responses
-from ..utils.responses import create_json_response, ResponseMessages
-from ..utils.helpers import distance_between_coordinates, sort_by_dist
+from app.auth import http_auth
+from app.entities.entity import Session
+from app.entities.hike_relations import HikeRelation
+from app.entities.user import UserAttributes, User, Permission
+from app.entities.country import Country
+from app.entities.region import Region, RegionAttributes
+from app.entities.location_type import LocationType
+from app.entities.activity_type import ActivityType
+from app.entities.location_activity import LocationActivity
+from app.entities.activity import Activity, ActivityAttributes
+from app.entities.location import Location, LocationAttributes
+from app.entities.comment import Comment
+from app.main.error_handling import investigate_integrity_error
+from app.utils import responses
+from app.utils.responses import create_json_response, ResponseMessages
+from app.utils.helpers import distance_between_coordinates, sort_by_dist
 
 main = Blueprint('main', __name__)
 
 
 def get_main_app():
     return main
-
-
-def extract_json_data(req, class_type):
-    try:
-        user_data = req.get_json()["user"]
-    except KeyError:
-        user_data = None
-
-    try:
-        data = req.get_json()[class_type.__name__.lower()]
-    except KeyError:
-        data = None
-
-    return user_data, data
-
-
-def extract_user(user_data, session, class_type):
-    if user_data.get(str(UserAttributes.USERNAME)):
-        user = session.query(User).filter_by(username=user_data.get(str(UserAttributes.USERNAME))).first()
-    else:
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.MISSING_PARAMETER_422,
-                                                  ResponseMessages.CREATE_MISSING_PARAM,
-                                                  user_data,
-                                                  class_type.__name__), 422)
-
-    return user
-
 
 def check_integrity_error(ie, session, class_type):
     session.rollback()
@@ -70,46 +42,10 @@ def check_integrity_error(ie, session, class_type):
         return None
 
 
-def extract_from_req(req, class_type):
-    user_data, data = extract_json_data(req, class_type)
+def create(req, user, class_type):
 
-    session = Session()
-
-    if user_data is not None:
-        expected_user = extract_user(user_data, session, class_type)
-    else:
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
-                                                  None), 400)
-
-    if isinstance(expected_user, User):
-        user = expected_user
-    else:
-        resp = expected_user
-        return make_response(create_json_response(responses.UNAUTHORIZED_403,
-                                                  ResponseMessages.MAIN_NO_USER_INFORMATION,
-                                                  resp), 403)
-
-    if data is None:
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_DATA,
-                                                  None), 400)
-
-    return user_data, user, data, session
-
-
-def create(req, class_type):
-
-    method_answer = extract_from_req(req, class_type)
-
-    if isinstance(method_answer, Response):
-        return method_answer
-    else:
-        user_data, user, data, session = method_answer
+    session = Session
+    data = req.get_json()
 
     if user is not None and user.can(Permission.CREATE):
         data.update({'created_by': user.id})
@@ -143,17 +79,13 @@ def create(req, class_type):
         session.close()
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.CREATE_NOT_AUTHORIZED,
-                                                  user_data), 403)
+                                                  None), 403)
 
 
-def update(req, class_type):
+def update(req, user,  class_type):
 
-    method_answer = extract_from_req(req, class_type)
-
-    if isinstance(method_answer, Response):
-        return method_answer
-    else:
-        user_data, user, data, session = method_answer
+    session = Session
+    data = req.get_json()
 
     if user is not None and user.can(Permission.CREATE):
         entity = session.query(class_type).filter_by(id=data.get(str(class_type.get_attributes().ID))).first()
@@ -191,7 +123,7 @@ def update(req, class_type):
         session.close()
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.UPDATE_NOT_AUTHORIZED,
-                                                  user_data), 403)
+                                                  None), 403)
 
 
 def list_all(class_type, req=None):
@@ -200,7 +132,7 @@ def list_all(class_type, req=None):
     res = None
 
     if req is not None:
-        _, data = extract_json_data(req, class_type)
+        data = req.get_json()
 
         if data is None:
             session.expunge_all()
@@ -341,118 +273,136 @@ def list_all(class_type, req=None):
 
 
 @main.route('/create/country', methods=['GET', 'POST'])
+@http_auth.login_required
 def create_country():
-    resp = create(rq, Country)
+
+    resp = create(req=rq, user=http_auth.current_user, class_type=Country)
 
     return resp
 
 
 @main.route('/create/region', methods=['GET', 'POST'])
+@http_auth.login_required
 def create_region():
-    resp = create(rq, Region)
+    resp = create(req=rq, user=http_auth.current_user, class_type=Region)
 
     return resp
 
 
 @main.route('/create/location_type', methods=['GET', 'POST'])
+@http_auth.login_required
 def create_location_type():
-    resp = create(rq, LocationType)
+    resp = create(req=rq, user=http_auth.current_user, class_type=LocationType)
 
     return resp
 
 
 @main.route('/create/activity_type', methods=['GET', 'POST'])
+@http_auth.login_required
 def create_activity_type():
-    resp = create(rq, ActivityType)
+    resp = create(req=rq, user=http_auth.current_user, class_type=ActivityType)
 
     return resp
 
 
 @main.route('/create/location_activity', methods=['GET', 'POST'])
+@http_auth.login_required
 def create_activity_location():
-    resp = create(rq, LocationActivity)
+    resp = create(req=rq, user=http_auth.current_user, class_type=LocationActivity)
 
     return resp
 
 
 @main.route('/create/activity', methods=['GET', 'POST'])
+@http_auth.login_required
 def create_activity():
-    resp = create(rq, Activity)
+    resp = create(req=rq, user=http_auth.current_user, class_type=Activity)
 
     return resp
 
 
 @main.route('/create/location', methods=['GET', 'POST'])
+@http_auth.login_required
 def create_location():
-    res = create(rq, Location)
+    resp = create(req=rq, user=http_auth.current_user, class_type=Location)
 
-    return res
+    return resp
 
 
 @main.route('/create/comment', methods=["GET", "POST"])
+@http_auth.login_required
 def create_comment():
-    res = create(rq, Comment)
+    resp = create(req=rq, user=http_auth.current_user, class_type=Comment)
 
-    return res
+    return resp
 
 
 @main.route('/update/country', methods=['GET', 'POST'])
+@http_auth.login_required
 def update_country():
-    resp = update(rq, Country)
+    resp = update(req=rq, user=http_auth.current_user, class_type=Country)
 
     return resp
 
 
 @main.route('/update/region', methods=['GET', 'POST'])
+@http_auth.login_required
 def update_region():
-    res = update(rq, Region)
+    resp = update(req=rq, user=http_auth.current_user, class_type=Region)
 
-    return res
+    return resp
 
 
 @main.route('/update/location_type', methods=['GET', 'POST'])
+@http_auth.login_required
 def update_location_type():
-    res = update(rq, LocationType)
+    resp = update(req=rq, user=http_auth.current_user, class_type=LocationType)
 
-    return res
+    return resp
 
 
 @main.route('/update/activity_type', methods=['GET', 'POST'])
+@http_auth.login_required
 def update_activity_type():
-    res = update(rq, ActivityType)
+    resp = update(req=rq, user=http_auth.current_user, class_type=ActivityType)
 
-    return res
+    return resp
 
 
 @main.route('/update/location_activity', methods=['GET', 'POST'])
+@http_auth.login_required
 def update_location_activity():
-    res = update(rq, LocationActivity)
+    resp = update(req=rq, user=http_auth.current_user, class_type=LocationActivity)
 
-    return res
+    return resp
 
 
 @main.route('/update/activity', methods=['GET', 'POST'])
+@http_auth.login_required
 def update_activity():
-    res = update(rq, Activity)
+    resp = update(req=rq, user=http_auth.current_user, class_type=Activity)
 
-    return res
+    return resp
 
 
 @main.route('/update/location', methods=['GET', 'POST'])
+@http_auth.login_required
 def update_location():
-    res = update(rq, Location)
+    resp = update(req=rq, user=http_auth.current_user, class_type=Location)
 
-    return res
+    return resp
 
 
 @main.route('/update/comment', methods=['GET', 'POST'])
+@http_auth.login_required
 def update_comment():
-    res = update(rq, Comment)
+    resp = update(req=rq, user=http_auth.current_user, class_type=Comment)
 
-    return res
+    return resp
 
 
 @main.route('/list/country', methods=['GET'])
+@http_auth.login_required
 def list_country():
     res = list_all(Country)
 
@@ -460,6 +410,7 @@ def list_country():
 
 
 @main.route('/list/country', methods=['POST'])
+@http_auth.login_required
 def list_country_param():
     res = list_all(Country, rq)
 
@@ -467,6 +418,7 @@ def list_country_param():
 
 
 @main.route('/list/region', methods=['GET'])
+@http_auth.login_required
 def list_region():
     res = list_all(Region)
 
@@ -474,6 +426,7 @@ def list_region():
 
 
 @main.route('/list/region', methods=['POST'])
+@http_auth.login_required
 def list_region_param():
     res = list_all(Region, rq)
 
@@ -481,6 +434,7 @@ def list_region_param():
 
 
 @main.route('/list/location_type', methods=['GET'])
+@http_auth.login_required
 def list_location_type():
     res = list_all(LocationType)
 
@@ -488,6 +442,7 @@ def list_location_type():
 
 
 @main.route('/list/location_type', methods=['POST'])
+@http_auth.login_required
 def list_location_type_param():
     res = list_all(LocationType, rq)
 
@@ -495,6 +450,7 @@ def list_location_type_param():
 
 
 @main.route('/list/activity_type', methods=['GET'])
+@http_auth.login_required
 def list_activity_type():
     res = list_all(ActivityType)
 
@@ -502,6 +458,7 @@ def list_activity_type():
 
 
 @main.route('/list/activity_type', methods=['POST'])
+@http_auth.login_required
 def list_activity_type_param():
     res = list_all(ActivityType, rq)
 
@@ -509,6 +466,7 @@ def list_activity_type_param():
 
 
 @main.route('/list/location_activity', methods=['GET'])
+@http_auth.login_required
 def list_location_activity():
     res = list_all(LocationActivity)
 
@@ -516,6 +474,7 @@ def list_location_activity():
 
 
 @main.route('/list/activity', methods=['GET'])
+@http_auth.login_required
 def list_activity():
     res = list_all(Activity)
 
@@ -523,6 +482,7 @@ def list_activity():
 
 
 @main.route('/list/activity', methods=['POST'])
+@http_auth.login_required
 def list_activity_param():
     res = list_all(Activity, rq)
 
@@ -530,6 +490,7 @@ def list_activity_param():
 
 
 @main.route('/list/location', methods=['GET', 'POST'])
+@http_auth.login_required
 def list_location():
     res = list_all(Location)
 
@@ -537,6 +498,7 @@ def list_location():
 
 
 @main.route('/list/comment', methods=['GET', 'POST'])
+@http_auth.login_required
 def list_comment():
     res = list_all(Comment)
 
@@ -544,6 +506,7 @@ def list_comment():
 
 
 @main.route('/list/hikerelation', methods=['GET', 'POST'])
+@http_auth.login_required
 def list_hikerelation():
     res = list_all(HikeRelation)
 
@@ -551,14 +514,12 @@ def list_hikerelation():
 
 
 @main.route('/find_tour', methods=['GET', 'POST'])
+@http_auth.login_required
 def find_tour():
 
-    method_answer = extract_from_req(rq, Activity)
-
-    if isinstance(method_answer, Response):
-        return method_answer
-    else:
-        user_data, user, data, session = method_answer
+    session = Session()
+    data = rq.get_json()
+    user = http_auth.current_user
 
     if user is not None and user.can(Permission.READ):
 
@@ -647,18 +608,16 @@ def find_tour():
     else:
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.FIND_NOT_AUTHORIZED,
-                                                  user_data), 403)
+                                                  None), 403)
 
 
 @main.route('/find_tour_by_term', methods=['GET', 'POST'])
+@http_auth.login_required
 def find_tour_by_term():
 
-    method_answer = extract_from_req(rq, Activity)
-
-    if isinstance(method_answer, Response):
-        return method_answer
-    else:
-        user_data, user, data, session = method_answer
+    session = Session()
+    data = rq.get_json()
+    user = http_auth.current_user
 
     if user is not None and user.can(Permission.READ):
 
@@ -694,18 +653,16 @@ def find_tour_by_term():
     else:
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.FIND_NOT_AUTHORIZED,
-                                                  user_data), 400)
+                                                  None), 400)
 
 
 @main.route('/hike', methods=['POST'])
+@http_auth.login_required
 def add_hike():
 
-    method_answer = extract_from_req(rq, HikeRelation)
-
-    if isinstance(method_answer, Response):
-        return method_answer
-    else:
-        user_data, user, data, session = method_answer
+    session = Session()
+    data = rq.get_json()
+    user = http_auth.current_user
 
     activity = session.query(Activity).filter(Activity.id == data.get('activity_id')).first()
 
@@ -731,18 +688,16 @@ def add_hike():
         session.close()
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.CREATE_NOT_AUTHORIZED,
-                                                  user_data), 403)
+                                                  None), 403)
 
 
 @main.route('/un_hike', methods=['POST'])
+@http_auth.login_required
 def rem_hike():
 
-    method_answer = extract_from_req(rq, HikeRelation)
-
-    if isinstance(method_answer, Response):
-        return method_answer
-    else:
-        user_data, user, data, session = method_answer
+    session = Session()
+    data = rq.get_json()
+    user = http_auth.current_user
 
     activity = session.query(Activity).filter(Activity.id == data.get(ActivityAttributes.ID)).first()
 
@@ -767,4 +722,4 @@ def rem_hike():
         session.close()
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.CREATE_NOT_AUTHORIZED,
-                                                  user_data), 403)
+                                                  None), 403)

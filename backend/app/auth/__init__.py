@@ -1,42 +1,66 @@
-from flask import Blueprint, request, make_response, current_app, url_for
+import datetime
+from flask import Blueprint, request, make_response, current_app, url_for, g
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from itsdangerous import TimedJSONWebSignatureSerializer
-from ..entities.user import User, UserInsertSchema, UserAttributes
-from ..entities.entity import Session
-from ..email import send_email
-from ..main.error_handling import investigate_integrity_error
-from ..utils import responses
-from ..utils.responses import create_json_response, ResponseMessages
+from flask_httpauth import HTTPBasicAuth
+from app.entities.user import User, UserInsertSchema, UserAttributes
+from app.entities.entity import Session
+from app.email import send_email
+from app.main.error_handling import investigate_integrity_error
+from app.utils import responses
+from app.utils.responses import create_json_response, ResponseMessages
+
 
 auth = Blueprint('auth', __name__)
+http_auth = HTTPBasicAuth()
 
 
-# TODO check for code duplicates
-@auth.route('/check_login', methods=['GET', 'POST'])
-def check_login():
-
-    data = request.get_json()
+@http_auth.verify_password
+def verify_password(email_or_token, password):
     session = Session()
-    if data.get(str(UserAttributes.USERNAME)):
-        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
+    if email_or_token == '':
+        return False
+    if password == '':
+
+        http_auth.current_user = User.verify_auth_token(email_or_token, session)
+        http_auth.token_used = True
         session.expunge_all()
         session.close()
-    elif data.get(str(UserAttributes.EMAIL)):
-        user = session.query(User).filter_by(email=data[str(UserAttributes.EMAIL)]).first()
-        session.expunge_all()
-        session.close()
-    else:
-        return make_response(create_json_response(responses.MISSING_PARAMETER_422,
-                                                  ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
-                                                  data), 422)
-    if user is not None and user.verify_password(data["password"]):
-        return make_response(create_json_response(responses.SUCCESS_200,
-                                                  ResponseMessages.AUTH_LOGIN_SUCCESSFUL,
-                                                  True), 200)
-    else:
-        return make_response(create_json_response(responses.SUCCESS_200,
-                                                  ResponseMessages.AUTH_LOGIN_FAILED,
-                                                  False), 200)
+        return http_auth.current_user is not None
+    user = session.query(User).filter(or_(User.email == email_or_token,
+                                          User.username == email_or_token)).first()
+    session.expunge_all()
+    session.close()
+
+    if not user:
+        return False
+    http_auth.current_user = user
+    http_auth.token_used = False
+    return user.verify_password(password)
+
+
+@http_auth.error_handler
+def auth_error():
+    return make_response(create_json_response(responses.UNAUTHORIZED_403,
+                                              ResponseMessages.AUTH_INVALID_PARAMS,
+                                              None), 403)
+
+
+@auth.route('/tokens/', methods=['POST'])
+@http_auth.login_required
+def get_token():
+    session = Session()
+    if http_auth.current_user is None or http_auth.token_used:
+        return make_response(create_json_response(responses.UNAUTHORIZED_403,
+                                                  ResponseMessages.AUTH_INVALID_PARAMS,
+                                                  None), 403)
+    return make_response(create_json_response(responses.SUCCESS_200,
+                                              ResponseMessages.AUTH_LOGIN_SUCCESSFUL,
+                                              {'token': http_auth.current_user.generate_auth_token(expiration=3600,
+                                                                                                   session=session),
+                                               'expiration_ts': datetime.datetime.now() + datetime.timedelta(hours=1)}),
+                         200)
 
 
 @auth.route('/create_user', methods=['GET', 'POST'])
@@ -111,25 +135,14 @@ def confirm(token):
 
 
 @auth.route('/confirm', methods=['GET', 'POST'])
+@http_auth.login_required
 def resend_confirmation():
 
     data = request.get_json()
-
-    if data.get(str(UserAttributes.USERNAME)):
-        session = Session()
-        curr_user = session.query(User).filter_by(username=data.get(str(UserAttributes.USERNAME))).first()
-        session.expunge_all()
-        session.close()
-    else:
-        return make_response(create_json_response(responses.MISSING_PARAMETER_422,
-                                                  ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
-                                                  data), 422)
-
+    curr_user = http_auth.current_user
     if curr_user is not None:
         if curr_user.confirmed:
             curr_user = curr_user.serialize()
-            session.expunge_all()
-            session.close()
             return make_response(create_json_response(responses.INVALID_INPUT_422,
                                                       ResponseMessages.AUTH_ALREADY_CONFIRMED,
                                                       curr_user), 422)
@@ -139,8 +152,6 @@ def resend_confirmation():
             send_email(curr_user.email, 'Confirm Your Account', 'auth/email/confirm',
                        username=curr_user.username, url=url)
             curr_user = curr_user.serialize()
-            session.expunge_all()
-            session.close()
             return make_response(create_json_response(responses.SUCCESS_200,
                                                       ResponseMessages.AUTH_CONFIRMATION_RESEND,
                                                       curr_user), 200)
@@ -151,41 +162,27 @@ def resend_confirmation():
 
 
 @auth.route('/change_password', methods=['GET', 'POST'])
+@http_auth.login_required
 def change_password():
 
     data = request.get_json()
     session = Session()
 
-    if data.get(str(UserAttributes.USERNAME)):
-        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
-    else:
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.MISSING_PARAMETER_422,
-                                                  ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
-                                                  data), 422)
-
+    user = http_auth.current_user
     if user is None:
         session.expunge_all()
         session.close()
         return make_response(create_json_response(responses.INVALID_INPUT_422,
                                                   ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
                                                   data), 422)
-    elif user.verify_password(data["password_old"]):
-        user.update_password(data["password_new"], session, data[str(UserAttributes.UPDATED_BY)])
+    else:
+        user.update_password(data["password_new"], session, user.username)
         user = user.serialize()
         session.expunge_all()
         session.close()
         return make_response(create_json_response(responses.SUCCESS_200,
                                                   ResponseMessages.AUTH_PASSWORD_CHANGED,
                                                   user), 200)
-    else:
-        user = user.serialize()
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                  ResponseMessages.AUTH_WRONG_PASSWORD,
-                                                  user), 422)
 
 
 @auth.route('/reset_cred', methods=['GET', 'POST'])
@@ -226,7 +223,7 @@ def password_reset(token):
 
     data = request.get_json()
     session = Session()
-    if not data.get("password") or not data.get(str(UserAttributes.UPDATED_BY)):
+    if not data.get("password"):
         session.expunge_all()
         session.close()
         return make_response(create_json_response(responses.MISSING_PARAMETER_422,
@@ -247,20 +244,13 @@ def password_reset(token):
 
 
 @auth.route('/change_email', methods=['GET', 'POST'])
+@http_auth.login_required
 def change_email_request():
 
     data = request.get_json()
     session = Session()
 
-    if data.get(str(UserAttributes.USERNAME)):
-        user = session.query(User).filter_by(username=data[str(UserAttributes.USERNAME)]).first()
-    else:
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.MISSING_PARAMETER_422,
-                                                  ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
-                                                  data), 422)
-
+    user = http_auth.current_user
     if user is None:
         session.expunge_all()
         session.close()
