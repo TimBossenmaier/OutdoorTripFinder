@@ -7,11 +7,11 @@ from flask import current_app
 from datetime import datetime
 from enum import Enum
 
-from .activity import Activity
-from .comment import Comment
-from .entity import Entity, EntitySchema, Base
-from .hike_relations import HikeRelation
-from .role import Permission
+from app.entities.comment import Comment
+from app.entities.entity import Entity, EntitySchema, Base
+from app.entities.hike_relations import HikeRelation
+from app.entities.role import Permission
+from app.utils.helpers import rand_alphanumeric
 
 
 class User(Entity, Base):
@@ -128,22 +128,6 @@ class User(Entity, Base):
         user.update_password(json["password"], session, json[str(UserAttributes.UPDATED_BY)])
         return True
 
-    @staticmethod
-    def resolve_email_token(token):
-
-        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
-
-        try:
-            data = s.loads(token.encode('utf-8'))
-        except:
-            return None, None, None
-
-        new_email = data.get(str(UserAttributes.EMAIL))
-        username = data.get(str(UserAttributes.USERNAME))
-        user_id = data.get('change_email')
-
-        return new_email, username, user_id
-
     def change_email(self, session, new_email, user_id, updated_by):
 
         if user_id != self.id:
@@ -164,6 +148,22 @@ class User(Entity, Base):
         user = UserSchema().dump(self)
 
         return user
+
+    @staticmethod
+    def resolve_email_token(token):
+
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+
+        try:
+            data = s.loads(token.encode('utf-8'))
+        except:
+            return None, None, None
+
+        new_email = data.get(str(UserAttributes.EMAIL))
+        username = data.get(str(UserAttributes.USERNAME))
+        user_id = data.get('change_email')
+
+        return new_email, username, user_id
 
 
 class UserInsertSchema(Schema):

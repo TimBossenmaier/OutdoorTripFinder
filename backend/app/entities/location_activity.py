@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from enum import Enum
 
-from .entity import Entity, Base, EntitySchema
+from app.entities.entity import Entity, Base, EntitySchema
 
 
 class LocationActivity(Entity, Base):

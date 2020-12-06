@@ -5,7 +5,7 @@ from marshmallow import Schema, fields
 from datetime import datetime
 from enum import Enum
 
-from .entity import Entity, Base, EntitySchema
+from app.entities.entity import Entity, Base, EntitySchema
 
 
 class ActivityType(Entity, Base):

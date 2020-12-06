@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, Integer, ForeignKey
 from marshmallow import Schema, fields
 from datetime import datetime
 
-from .entity import Entity, EntitySchema, Base, Session
+from app.entities.entity import Entity, EntitySchema, Base, Session
 
 
 class Country(Entity, Base):

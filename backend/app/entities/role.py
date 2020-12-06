@@ -1,8 +1,9 @@
-from .entity import Entity, EntitySchema, Base
 from marshmallow import fields
 from sqlalchemy import Column, String, Boolean, Integer
 from sqlalchemy.orm import relationship
 from enum import Enum
+
+from app.entities.entity import Entity, EntitySchema, Base
 
 
 class Role(Entity, Base):

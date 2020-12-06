@@ -6,8 +6,8 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from enum import Enum
 
-from .comment import Comment
-from .entity import Entity, Base, EntitySchema
+from app.entities.comment import Comment
+from app.entities.entity import Entity, Base, EntitySchema
 
 
 class Activity(Entity, Base):

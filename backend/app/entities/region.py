@@ -6,8 +6,8 @@ from marshmallow import Schema, fields
 from sqlalchemy.orm import relationship
 from enum import Enum
 
-from ..entities.country import Country
-from .entity import Entity, EntitySchema, Base
+from app.entities.country import Country
+from app.entities.entity import Entity, EntitySchema, Base
 
 
 class Region(Entity, Base):
