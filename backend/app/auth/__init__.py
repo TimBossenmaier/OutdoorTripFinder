@@ -1,4 +1,6 @@
 import datetime
+import os
+
 from flask import Blueprint, request, make_response, current_app, url_for
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
@@ -12,9 +14,54 @@ from app.main.error_handling import investigate_integrity_error
 from app.utils import responses
 from app.utils.responses import create_json_response, ResponseMessages
 
-
 auth = Blueprint('auth', __name__)
 http_auth = HTTPBasicAuth()
+
+
+def process_consent(typ, token):
+    s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+
+    try:
+        data = s.loads(token.encode('utf-8'))
+    except:
+        return make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                  ResponseMessages.AUTH_TOKEN_INVALID,
+                                                  token), 422)
+
+    session = Session()
+    user_id = data.get(typ)
+    user = session.query(User).filter_by(id=user_id).first()
+
+    if user is None:
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                  ResponseMessages.AUTH_TOKEN_INVALID,
+                                                  token), 422)
+    elif user.confirmed:
+        user = user.serialize()
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.SUCCESS_200,
+                                                  ResponseMessages.AUTH_USER_CONFIRMED,
+                                                  user), 200)
+    else:
+
+        if typ == 'confirm':
+            user.confirm(session)
+        else:
+            user.approve(session)
+            new_token = user.generate_confirmation_token()
+            url = url_for('auth.confirm', token=new_token, _external=True)
+            send_email(user.email, 'Confirm Your Account', 'email/confirm',
+                       username=user.username, url=url)
+
+        user = user.serialize()
+        session.expunge_all()
+        session.close()
+        return make_response(create_json_response(responses.SUCCESS_200,
+                                                  ResponseMessages.AUTH_USER_CONFIRMED,
+                                                  user), 201)
 
 
 @http_auth.verify_password
@@ -23,7 +70,6 @@ def verify_password(email_or_token, password):
     if email_or_token == '':
         return False
     if password == '':
-
         http_auth.current_user = User.verify_auth_token(email_or_token, session)
         http_auth.token_used = True
         session.expunge_all()
@@ -66,7 +112,6 @@ def get_token():
 
 @auth.route('/create_user', methods=['GET', 'POST'])
 def create_user():
-
     data = request.get_json()
 
     session = Session()
@@ -87,58 +132,33 @@ def create_user():
         session.expunge_all()
         session.close()
 
-    confirmation_token = user.generate_confirmation_token()
-    url = url_for('auth.confirm', token=confirmation_token, _external=True)
-    send_email(user.email, 'Confirm Your Account', 'auth/email/confirm',
-               username=user.username, url=url)
+    approval_token = user.generate_approval_token()
+    url = url_for('auth.approve', token=approval_token, _external=True)
+    send_email(os.environ.get('APPROVAL_MAIL'), 'Confirm New User', 'email/new_user',
+               username=user.username, url=url, email=user.email)
 
     return make_response(create_json_response(responses.SUCCESS_201,
                                               ResponseMessages.AUTH_USER_CREATED,
                                               res), 201)
 
 
+@auth.route('/approve/<token>')
+def approve(token):
+    resp = process_consent('approve', token)
+
+    return resp
+
+
 @auth.route('/confirm/<token>')
 def confirm(token):
-    s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
+    resp = process_consent('confirm', token)
 
-    try:
-        data = s.loads(token.encode('utf-8'))
-    except:
-        return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                  ResponseMessages.AUTH_TOKEN_INVALID,
-                                                  token), 422)
-
-    session = Session()
-    user_id = data.get("confirm")
-    user = session.query(User).filter_by(id=user_id).first()
-
-    if user is None:
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                  ResponseMessages.AUTH_TOKEN_INVALID,
-                                                  token), 422)
-    elif user.confirmed:
-        user = user.serialize()
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.SUCCESS_200,
-                                                  ResponseMessages.AUTH_USER_CONFIRMED,
-                                                  user), 200)
-    else:
-        user.confirm(session)
-        user = user.serialize()
-        session.expunge_all()
-        session.close()
-        return make_response(create_json_response(responses.SUCCESS_200,
-                                                  ResponseMessages.AUTH_USER_CONFIRMED,
-                                                  user), 201)
+    return resp
 
 
 @auth.route('/confirm', methods=['GET', 'POST'])
 @http_auth.login_required
 def resend_confirmation():
-
     data = request.get_json()
     curr_user = http_auth.current_user
     if curr_user is not None:
@@ -150,7 +170,7 @@ def resend_confirmation():
         else:
             new_token = curr_user.generate_confirmation_token()
             url = url_for('auth.confirm', token=new_token, _external=True)
-            send_email(curr_user.email, 'Confirm Your Account', 'auth/email/confirm',
+            send_email(curr_user.email, 'Confirm Your Account', 'email/confirm',
                        username=curr_user.username, url=url)
             curr_user = curr_user.serialize()
             return make_response(create_json_response(responses.SUCCESS_200,
@@ -165,7 +185,6 @@ def resend_confirmation():
 @auth.route('/change_password', methods=['GET', 'POST'])
 @http_auth.login_required
 def change_password():
-
     data = request.get_json()
     session = Session()
 
@@ -188,7 +207,6 @@ def change_password():
 
 @auth.route('/reset_cred', methods=['GET', 'POST'])
 def password_reset_request():
-
     data = request.get_json()
     session = Session()
 
@@ -210,7 +228,7 @@ def password_reset_request():
     else:
         token = user.generate_reset_token()
         url = url_for('auth.password_reset', token=token, _external=True)
-        send_email(user.email, 'Reset Your Password', 'auth/email/reset_password',
+        send_email(user.email, 'Reset Your Password', 'email/reset_password',
                    username=user.username, url=url)
         session.expunge_all()
         session.close()
@@ -221,7 +239,6 @@ def password_reset_request():
 
 @auth.route('reset/<token>', methods=['GET', 'POST'])
 def password_reset(token):
-
     data = request.get_json()
     session = Session()
     if not data.get("password"):
@@ -247,7 +264,6 @@ def password_reset(token):
 @auth.route('/change_email', methods=['GET', 'POST'])
 @http_auth.login_required
 def change_email_request():
-
     data = request.get_json()
     session = Session()
 
@@ -266,7 +282,7 @@ def change_email_request():
         email_token = user.generate_email_token(data[str(UserAttributes.EMAIL)],
                                                 data.get(str(UserAttributes.USERNAME)))
         url = url_for('auth.change_email', token=email_token, _external=True)
-        send_email(data.get(str(UserAttributes.EMAIL)), 'Confirm Your Email Address', 'auth/email/change_email',
+        send_email(data.get(str(UserAttributes.EMAIL)), 'Confirm Your Email Address', 'email/change_email',
                    username=data.get(str(UserAttributes.USERNAME)), url=url)
 
         user = user.serialize()

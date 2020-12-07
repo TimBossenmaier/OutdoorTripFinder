@@ -20,13 +20,14 @@ class User(Entity, Base):
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String(256))
     role_id = Column(Integer, ForeignKey('roles.id'))
+    approved = Column(Boolean, default=False)
     confirmed = Column(Boolean, default=False)
     session_id = Column(String, nullable=False)
     last_updated_by = Column(String, nullable=False)
     hiked = relationship(HikeRelation, foreign_keys=[HikeRelation.user_id], lazy='dynamic')
     comments = relationship(Comment, foreign_keys=[Comment.author_id], lazy='dynamic')
 
-    def __init__(self, username, email, password, role_id, created_by):
+    def __init__(self, username, email, password, created_by, role_id=1):
         Entity.__init__(self)
         self.username = username
         self.email = email
@@ -68,7 +69,17 @@ class User(Entity, Base):
     def confirm(self, session):
 
         self.confirmed = True
-        self.last_updated_by = 'Account Validator'
+        self.last_updated_by = self.username
+        self.updated_at = datetime.now()
+        session.add(self)
+        session.commit()
+
+        return True
+
+    def approve(self, session):
+
+        self.approved = True
+        self.last_updated_by = 'Account Approver'
         self.updated_at = datetime.now()
         session.add(self)
         session.commit()
@@ -82,6 +93,14 @@ class User(Entity, Base):
 
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expires_in=expiration)
         return s.dumps({'confirm': self.id}).decode('utf-8')
+
+    def generate_approval_token(self, expiration=86400):
+        """
+        expiration: 24 h
+        """
+
+        s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expires_in=expiration)
+        return s.dumps({'approve': self.id}).decode('utf-8')
 
     def generate_reset_token(self, expiration=86400):
         """
@@ -205,6 +224,7 @@ class UserAttributes(Enum):
     ROLE_ID = 'role_id'
     SESSION_ID = 'session_id'
     CONFIRMED = 'confirmed'
+    APPROVED = 'approved'
     ID = 'id'
     CREATED_AT = 'created_at'
     UPDATED_AT = 'updated_at'
