@@ -117,6 +117,7 @@ def create_user():
     session = Session()
     user_schema = UserInsertSchema()
     user = User(**user_schema.load(data))
+    res = None
     try:
         res = user_schema.dump(user.create(session))
     except IntegrityError as ie:
