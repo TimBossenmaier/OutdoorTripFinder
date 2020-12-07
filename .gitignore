@@ -1,5 +1,5 @@
 # exclude file for db config
-backend/src/entities/db_config.json
+backend/app/entities/db_config.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

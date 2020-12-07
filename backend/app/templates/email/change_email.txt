@@ -1,0 +1,9 @@
+Hey {username},
+
+Um deine E-Mail Adresse zu bestätigen, klicke bitte auf den unten stehenden Link:
+
+{url}
+
+Liebe Grüße,
+
+Dein Team von Outdoor-Trips

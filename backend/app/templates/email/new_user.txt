@@ -1,0 +1,3 @@
+User {username} with email {email} has joined.
+
+Approve user with {url}

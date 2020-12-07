@@ -1,0 +1,11 @@
+Hey {username},
+
+Herzlich Willkommen zu Outdoor-Trips!
+
+Um deinen Account zu bestätigen, klicke bitte auf den folgenden Link:
+
+{url}
+
+Liebe Grüße,
+
+Dein Team von Outdoor-Trips

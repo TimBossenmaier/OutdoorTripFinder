@@ -1,19 +1,21 @@
-from backend.src.entities.activity_type import ActivityType
-from backend.src.entities.activity import Activity
-from backend.src.entities.country import Country
-from backend.src.entities.location_type import LocationType
-from backend.src.entities.location import Location
-from backend.src.entities.location_activity import LocationActivity
-from backend.src.entities.region import Region
-from backend.src.entities.entity import Base, Session, engine
-import pandas as pd
 import os
 import xlrd
+import pandas as pd
+
+from app.entities.activity_type import ActivityType
+from app.entities.activity import Activity
+from app.entities.country import Country
+from app.entities.location import Location
+from app.entities.location_activity import LocationActivity
+from app.entities.region import Region
+from app.entities.entity import Base, Session, engine
+from app.entities.location_type import LocationType
 
 
 def intersection(ids, keys_used):
     lst3 = [v for v in keys_used if v not in ids]
     return lst3
+
 
 Base.metadata.create_all(engine)
 session = Session()
@@ -93,15 +95,15 @@ if len(intersection(ids_regions, list(data_locations.region_id))) > 0:
     print("The following region ids are used but not defined",
           intersection(ids_regions, list(data_locations.region_id)))
 
+if len(intersection(ids_location_types, list(data_locations.location_type_id))) > 0:
+    errors_found = True
+    print("The following region ids are used but not defined",
+          intersection(ids_location_types, list(data_locations.location_type_id)))
+
 if len(intersection(ids_activities, list(data_mappings.act_id))) > 0:
     errors_found = True
     print("The following activity ids are used but not defined",
           intersection(ids_activities, list(data_mappings.act_id)))
-
-if len(intersection(ids_location_types, list(data_locations.location_type_id))) > 0:
-    errors_found = True
-    print("The following location types are used nut not defined",
-          intersection(ids_location_types, list(data_locations.location_type_id)))
 
 if len(intersection(ids_locations, list(data_mappings.loc_id))) > 0:
     errors_found = True
@@ -112,17 +114,6 @@ if len(intersection(ids_activity_types, data_activities.activity_id)) > 0:
     errors_found = True
     print("The following activity_type ids are used but not defined",
           intersection(ids_activity_types, list(data_activities.activity_id)))
-
-# check whether geo coordinates are valid
-# ref: https://en.wikipedia.org/wiki/Geographic_coordinate_system#3D_Cartesian_coordinates
-invalid_lat = data_locations[abs(data_locations.lat) > 90.0]
-invalid_long = data_locations[abs(data_locations.long) > 180.0]
-if invalid_lat.shape[0] > 0:
-    errors_found = True
-    print("The latitude values of the following locations are invalid:", [x for x in invalid_lat.id])
-if invalid_long.shape[0] > 0:
-    errors_found = True
-    print("The longitude values of the following locations are invalid:", [x for x in invalid_long.id])
 
 # check presence of all files, resp. validity of save_paths
 for each_file in data_activities.save_path:
@@ -160,7 +151,7 @@ if not errors_found:
     for idx in data_locations.index:
         locations.append(Location(data_locations.loc[idx, "lat"], data_locations.loc[idx, "long"],
                                   data_locations.loc[idx, "name"], int(data_locations.loc[idx, "location_type_id"]),
-                                  int(data_locations.loc[idx, "region_id"]),data_locations.loc[idx, "creator"]))
+                                  int(data_locations.loc[idx, "region_id"]), data_locations.loc[idx, "creator"]))
     session.add_all(locations)
     session.commit()
 
