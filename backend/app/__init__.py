@@ -3,6 +3,7 @@ from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
+
 from app.main import main as main_blueprint
 from app.auth import auth as auth_blueprint
 from config import config

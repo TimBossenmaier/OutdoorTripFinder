@@ -1,4 +1,5 @@
 # coding=utf-8
+import os
 
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, DateTime
@@ -7,7 +8,6 @@ from sqlalchemy.orm import sessionmaker
 from marshmallow import Schema, fields
 from dotenv import load_dotenv
 from enum import Enum
-import os
 
 load_dotenv('../.env')
 

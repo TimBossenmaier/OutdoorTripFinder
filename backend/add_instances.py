@@ -1,14 +1,15 @@
-from backend.app.entities.activity_type import ActivityType
-from backend.app.entities.activity import Activity
-from backend.app.entities.country import Country
-from backend.app.entities.location import Location
-from backend.app.entities.location_activity import LocationActivity
-from backend.app.entities.region import Region
-from backend.app.entities.entity import Base, Session, engine
-from backend.app.entities.location_type import LocationType
-import pandas as pd
 import os
 import xlrd
+import pandas as pd
+
+from app.entities.activity_type import ActivityType
+from app.entities.activity import Activity
+from app.entities.country import Country
+from app.entities.location import Location
+from app.entities.location_activity import LocationActivity
+from app.entities.region import Region
+from app.entities.entity import Base, Session, engine
+from app.entities.location_type import LocationType
 
 
 def intersection(ids, keys_used):

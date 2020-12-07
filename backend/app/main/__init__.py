@@ -25,6 +25,7 @@ main = Blueprint('main', __name__)
 def get_main_app():
     return main
 
+
 def check_integrity_error(ie, session, class_type):
     session.rollback()
     session.expunge_all()

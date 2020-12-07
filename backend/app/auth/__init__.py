@@ -1,9 +1,10 @@
 import datetime
-from flask import Blueprint, request, make_response, current_app, url_for, g
+from flask import Blueprint, request, make_response, current_app, url_for
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from itsdangerous import TimedJSONWebSignatureSerializer
 from flask_httpauth import HTTPBasicAuth
+
 from app.entities.user import User, UserInsertSchema, UserAttributes
 from app.entities.entity import Session
 from app.email import send_email
