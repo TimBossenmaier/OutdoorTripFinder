@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.auth import http_auth
 from app.entities.entity import Session
 from app.entities.hike_relations import HikeRelation
-from app.entities.user import UserAttributes, User, Permission
+from app.entities.user import Permission
 from app.entities.country import Country
 from app.entities.region import Region, RegionAttributes
 from app.entities.location_type import LocationType
@@ -45,7 +45,7 @@ def check_integrity_error(ie, session, class_type):
 
 def create(req, user, class_type):
 
-    session = Session
+    session = Session()
     data = req.get_json()
 
     if user is not None and user.can(Permission.CREATE):
@@ -85,7 +85,7 @@ def create(req, user, class_type):
 
 def update(req, user,  class_type):
 
-    session = Session
+    session = Session()
     data = req.get_json()
 
     if user is not None and user.can(Permission.CREATE):
