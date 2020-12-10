@@ -114,9 +114,12 @@ def get_token():
 def create_user():
     data = request.get_json()
 
+    #TODO: check when user already exists
+
     session = Session()
     user_schema = UserInsertSchema()
     user = User(**user_schema.load(data))
+    res = None
     try:
         res = user_schema.dump(user.create(session))
     except IntegrityError as ie:

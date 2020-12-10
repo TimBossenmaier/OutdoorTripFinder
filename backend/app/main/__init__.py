@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.auth import http_auth
 from app.entities.entity import Session
 from app.entities.hike_relations import HikeRelation
-from app.entities.user import UserAttributes, User, Permission
+from app.entities.user import Permission, User
 from app.entities.country import Country
 from app.entities.region import Region, RegionAttributes
 from app.entities.location_type import LocationType
@@ -45,8 +45,11 @@ def check_integrity_error(ie, session, class_type):
 
 def create(req, user, class_type):
 
-    session = Session
+    session = Session()
     data = req.get_json()
+
+    if user not in session:
+        user = session.query(User).get(user.id)
 
     if user is not None and user.can(Permission.CREATE):
         data.update({'created_by': user.id})
@@ -58,7 +61,7 @@ def create(req, user, class_type):
             res = schema.dump(class_instance.create(session))
 
         except IntegrityError as ie:
-
+            # TODO: check also for not existing values
             check_result = check_integrity_error(ie, session, class_type)
 
             if check_result is None:
@@ -85,8 +88,11 @@ def create(req, user, class_type):
 
 def update(req, user,  class_type):
 
-    session = Session
+    session = Session()
     data = req.get_json()
+
+    if user not in session:
+        user = session.query(User).get(user.id)
 
     if user is not None and user.can(Permission.CREATE):
         entity = session.query(class_type).filter_by(id=data.get(str(class_type.get_attributes().ID))).first()
@@ -125,6 +131,33 @@ def update(req, user,  class_type):
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.UPDATE_NOT_AUTHORIZED,
                                                   None), 403)
+
+
+def by_id(user, id, classtype):
+    session = Session()
+    res = None
+
+    if user not in session:
+        user = session.query(User).get(user.id)
+
+    if user is not None and user.can(Permission.READ):
+        entity = session.query(classtype).get(id)
+
+        if entity is not None:
+            res = entity.convert_to_insert_schema()
+            session.expunge_all()
+            session.close()
+            return make_response(create_json_response(responses.SUCCESS_200,
+                                                      ResponseMessages.LIST_SUCCESS,
+                                                      res,
+                                                      classtype.__name__), 200)
+        else:
+            session.expunge_all()
+            session.close()
+            return make_response(create_json_response(responses.INVALID_INPUT_422,
+                                                      ResponseMessages.LIST_INVALID_INPUT,
+                                                      res,
+                                                      classtype.__name__), 200)
 
 
 def list_all(class_type, req=None):
@@ -490,6 +523,22 @@ def list_activity_param():
     return res
 
 
+@main.route('/list/location', methods=['POST'])
+@http_auth.login_required
+def list_location_param():
+    res = list_all(Location, rq)
+
+    return res
+
+
+@main.route('/list/location', methods=['GET'])
+@http_auth.login_required
+def list_location():
+    res = list_all(Location)
+
+    return res
+
+
 @main.route('/list/location', methods=['GET', 'POST'])
 @http_auth.login_required
 def list_location():
@@ -514,6 +563,55 @@ def list_hikerelation():
     return res
 
 
+@main.route('/country/<id>', methods=['GET'])
+@http_auth.login_required()
+def country_by_id(id):
+    res = by_id(user=http_auth.current_user, id=id, classtype=Country)
+
+    return res
+
+
+@main.route('/region/<id>', methods=['GET'])
+@http_auth.login_required()
+def region_by_id(id):
+    res = by_id(user=http_auth.current_user, id=id, classtype=Region)
+
+    return res
+
+
+@main.route('/location_type/<id>', methods=['GET'])
+@http_auth.login_required()
+def location_type_by_id(id):
+    res = by_id(user=http_auth.current_user, id=id, classtype=LocationType)
+
+    return res
+
+
+@main.route('/activity_type/<id>', methods=['GET'])
+@http_auth.login_required()
+def activity_type_by_id(id):
+    res = by_id(user=http_auth.current_user, id=id, classtype=ActivityType)
+
+    return res
+
+
+@main.route('/location/<id>', methods=['GET'])
+@http_auth.login_required()
+def location_by_id(id):
+    res = by_id(user=http_auth.current_user, id=id, classtype=Location)
+
+    return res
+
+
+@main.route('/activity/<id>', methods=['GET'])
+@http_auth.login_required()
+def activity_by_id(id):
+    res = by_id(user=http_auth.current_user, id=id, classtype=Activity)
+
+    return res
+
+
+
 @main.route('/find_tour', methods=['GET', 'POST'])
 @http_auth.login_required
 def find_tour():
@@ -521,6 +619,9 @@ def find_tour():
     session = Session()
     data = rq.get_json()
     user = http_auth.current_user
+
+    if user not in session:
+        user = session.query(User).get(user.id)
 
     if user is not None and user.can(Permission.READ):
 
@@ -620,6 +721,9 @@ def find_tour_by_term():
     data = rq.get_json()
     user = http_auth.current_user
 
+    if user not in session:
+        user = session.query(User).get(user.id)
+
     if user is not None and user.can(Permission.READ):
 
         if data.get('search_term'):
@@ -665,6 +769,9 @@ def add_hike():
     data = rq.get_json()
     user = http_auth.current_user
 
+    if user not in session:
+        user = session.query(User).get(user.id)
+
     activity = session.query(Activity).filter(Activity.id == data.get('activity_id')).first()
 
     if activity is None:
@@ -699,6 +806,9 @@ def rem_hike():
     session = Session()
     data = rq.get_json()
     user = http_auth.current_user
+
+    if user not in session:
+        user = session.query(User).get(user.id)
 
     activity = session.query(Activity).filter(Activity.id == data.get(ActivityAttributes.ID)).first()
 
