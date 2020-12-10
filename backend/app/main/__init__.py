@@ -539,14 +539,6 @@ def list_location():
     return res
 
 
-@main.route('/list/location', methods=['GET', 'POST'])
-@http_auth.login_required
-def list_location():
-    res = list_all(Location)
-
-    return res
-
-
 @main.route('/list/comment', methods=['GET', 'POST'])
 @http_auth.login_required
 def list_comment():
