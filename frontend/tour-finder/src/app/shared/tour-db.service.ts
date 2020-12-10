@@ -12,7 +12,7 @@ import { TourFactory } from './tour-factory';
   providedIn: 'root'
 })
 export class TourDbService {
-  private apiURL = 'http://localhost:5000';
+  private apiURL = 'http://192.168.0.174:5000';
 
   constructor(private http: HttpClient) {
 
@@ -37,7 +37,7 @@ export class TourDbService {
   }
 
   getTourByID(id: string): Observable<Tour> {
-    return this.http.get<TourRaw>(`${this.apiURL}/get_by_id?id=${id}`)
+    return this.http.get<TourRaw>(`${this.apiURL}/main/activity/${id}`)
       .pipe(
         retry(3),
         map(t => TourFactory.fromRaw(t)),
