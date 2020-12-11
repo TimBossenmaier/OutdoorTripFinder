@@ -603,14 +603,19 @@ def activity_by_id(id):
     return res
 
 
-
 @main.route('/find_tour', methods=['GET', 'POST'])
-@http_auth.login_required
-def find_tour():
+#@http_auth.login_required
+def find_tour(data=None, user=None):
+
+    if data==None: # ONLY DEV-PURPOSE
+        data = rq.get_json()
+
+    if user == None: # ONLY DEV-PURPOSE
+        user = http_auth.current_user
 
     session = Session()
-    data = rq.get_json()
-    user = http_auth.current_user
+
+
 
     if user not in session:
         user = session.query(User).get(user.id)
@@ -826,3 +831,11 @@ def rem_hike():
         return make_response(create_json_response(responses.UNAUTHORIZED_403,
                                                   ResponseMessages.CREATE_NOT_AUTHORIZED,
                                                   None), 403)
+
+
+@main.route('/demo', methods=['GET']) # ONLY DEV-PURPOSE
+def demo():
+    json = {'curr_lat': 47.758, 'curr_long': 8.123, 'max_dist': 100}
+    user = Session().query(User).get(16)
+    resp = find_tour(data=json, user=user)
+    return resp

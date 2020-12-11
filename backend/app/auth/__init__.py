@@ -114,8 +114,6 @@ def get_token():
 def create_user():
     data = request.get_json()
 
-    #TODO: check when user already exists
-
     session = Session()
     user_schema = UserInsertSchema()
     user = User(**user_schema.load(data))
@@ -130,7 +128,7 @@ def create_user():
         if msg is not None:
             return make_response(create_json_response(responses.BAD_REQUEST_400,
                                                       ResponseMessages.AUTH_DUPLICATE_PARAMS,
-                                                      msg), 422)
+                                                      msg), 400)
     finally:
         session.expunge_all()
         session.close()
