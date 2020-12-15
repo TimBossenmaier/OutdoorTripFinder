@@ -1,4 +1,4 @@
-from flask import Blueprint, request as rq, make_response, Response
+from flask import Blueprint, request as rq
 from sqlalchemy import or_, and_
 from sqlalchemy.exc import IntegrityError
 
@@ -16,7 +16,7 @@ from app.entities.location import Location, LocationAttributes
 from app.entities.comment import Comment
 from app.main.error_handling import investigate_integrity_error
 from app.utils import responses
-from app.utils.responses import create_json_response, ResponseMessages
+from app.utils.responses import ResponseMessages, create_response
 from app.utils.helpers import distance_between_coordinates, sort_by_dist
 
 main = Blueprint('main', __name__)
@@ -34,10 +34,8 @@ def check_integrity_error(ie, session, class_type):
     msg = investigate_integrity_error(ie)
     if msg is not None:
 
-        return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                  ResponseMessages.CREATE_DUPLICATE_PARAMS,
-                                                  msg,
-                                                  class_type.__name__), 422)
+        return create_response(msg, responses.INVALID_INPUT_422, ResponseMessages.CREATE_DUPLICATE_PARAMS,
+                               class_type.__name__, 422)
 
     else:
         return None
@@ -74,16 +72,12 @@ def create(req, user, class_type):
             session.expunge_all()
             session.close()
 
-        return make_response(create_json_response(responses.SUCCESS_201,
-                                                  ResponseMessages.CREATE_SUCCESS,
-                                                  res,
-                                                  class_type.__name__), 201)
+        return create_response(res, responses.SUCCESS_201, ResponseMessages.CREATE_SUCCESS, class_type.__name__, 201)
     else:
         session.expunge_all()
         session.close()
-        return make_response(create_json_response(responses.UNAUTHORIZED_403,
-                                                  ResponseMessages.CREATE_NOT_AUTHORIZED,
-                                                  None), 403)
+        return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.CREATE_NOT_AUTHORIZED,
+                               class_type.__name__, 201)
 
 
 def update(req, user,  class_type):
@@ -114,23 +108,19 @@ def update(req, user,  class_type):
                 res = entity.convert_to_insert_schema()
                 session.expunge_all()
                 session.close()
-            return make_response(create_json_response(responses.SUCCESS_200,
-                                                      ResponseMessages.UPDATE_SUCCESS,
-                                                      res,
-                                                      class_type.__name__), 200)
+            return create_response(res, responses.SUCCESS_200, ResponseMessages.UPDATE_SUCCESS,
+                                   class_type.__name__, 200)
+
         else:
             session.expunge_all()
             session.close()
-            return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                      ResponseMessages.UPDATE_FAILED,
-                                                      data,
-                                                      class_type.__name__), 422)
+            return create_response(data, responses.INVALID_INPUT_422, ResponseMessages.UPDATE_FAILED,
+                                   class_type.__name__, 422)
     else:
         session.expunge_all()
         session.close()
-        return make_response(create_json_response(responses.UNAUTHORIZED_403,
-                                                  ResponseMessages.UPDATE_NOT_AUTHORIZED,
-                                                  None), 403)
+        return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.UPDATE_NOT_AUTHORIZED,
+                               class_type.__name__, 403)
 
 
 def by_id(user, id, classtype):
@@ -147,17 +137,12 @@ def by_id(user, id, classtype):
             res = entity.convert_to_insert_schema()
             session.expunge_all()
             session.close()
-            return make_response(create_json_response(responses.SUCCESS_200,
-                                                      ResponseMessages.LIST_SUCCESS,
-                                                      res,
-                                                      classtype.__name__), 200)
+            return create_response(res, responses.SUCCESS_200, ResponseMessages.LIST_SUCCESS, classtype.__name__, 200)
         else:
             session.expunge_all()
             session.close()
-            return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                      ResponseMessages.LIST_INVALID_INPUT,
-                                                      res,
-                                                      classtype.__name__), 200)
+            return create_response(res, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
+                                   classtype.__name__, 200)
 
 
 def list_all(class_type, req=None):
@@ -171,9 +156,8 @@ def list_all(class_type, req=None):
         if data is None:
             session.expunge_all()
             session.close()
-            return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                      ResponseMessages.MAIN_NO_DATA,
-                                                      None), 400)
+            return create_response(None, responses.BAD_REQUEST_400, ResponseMessages.MAIN_NO_DATA,
+                                   class_type.__name__, 400)
     else:
         data = {}
 
@@ -189,10 +173,8 @@ def list_all(class_type, req=None):
         if class_type == Country:
             session.expunge_all()
             session.close()
-            return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                      ResponseMessages.LIST_INVALID_INPUT,
-                                                      keys,
-                                                      class_type.__name__), 422)
+            return create_response(keys, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
+                                   class_type.__name__, 422)
         else:
             if keys.get(
                     str(RegionAttributes.COUNTRY_ID)
@@ -207,20 +189,16 @@ def list_all(class_type, req=None):
             else:
                 session.expunge_all()
                 session.close()
-                make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                   ResponseMessages.LIST_INVALID_INPUT,
-                                                   keys,
-                                                   class_type.__name__), 422)
+                return create_response(keys, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
+                                       class_type.__name__, 422)
 
     elif term != '' and keys is not None:
 
         if class_type == Country:
             session.expunge_all()
             session.close()
-            return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                      ResponseMessages.LIST_INVALID_INPUT,
-                                                      keys,
-                                                      class_type.__name__), 422)
+            return create_response(keys, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
+                                   class_type.__name__, 422)
         else:
             if keys.get(
                     str(RegionAttributes.COUNTRY_ID) if class_type == Region else str(LocationAttributes.REGION_ID)):
@@ -244,10 +222,8 @@ def list_all(class_type, req=None):
             else:
                 session.expunge_all()
                 session.close()
-                return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                          ResponseMessages.LIST_INVALID_INPUT,
-                                                          keys,
-                                                          class_type.__name__), 422)
+                return create_response(keys, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
+                                       class_type.__name__, 422)
     elif typ is not None:
         if class_type == Location and typ.get(str(LocationAttributes.LOCATION_TYPE_ID)):
             res = session.query(Location) \
@@ -262,20 +238,15 @@ def list_all(class_type, req=None):
         else:
             session.expunge_all()
             session.close()
-            return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                      ResponseMessages.LIST_INVALID_INPUT,
-                                                      typ,
-                                                      class_type.__name__), 422)
+            return create_response(typ, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
+                                   class_type.__name__, 422)
     else:
         res = session.query(class_type).order_by(class_type.id.asc()).all()
 
     if res is None:
         session.expunge_all()
         session.close()
-        return make_response(create_json_response(responses.INVALID_INPUT_422,
-                                                  ResponseMessages.LIST_EMPTY,
-                                                  None,
-                                                  class_type.__name__), 422)
+        return create_response(None, responses.INVALID_INPUT_422, ResponseMessages.LIST_EMPTY, class_type.__name__, 422)
     else:
         attributes = class_type.get_attributes()
         if class_type == LocationActivity:
@@ -300,10 +271,7 @@ def list_all(class_type, req=None):
 
         session.expunge_all()
         session.close()
-        return make_response(create_json_response(responses.SUCCESS_200,
-                                                  ResponseMessages.LIST_SUCCESS,
-                                                  entities,
-                                                  class_type.__name__), 200)
+        return create_response(entities, responses.SUCCESS_200, ResponseMessages.LIST_SUCCESS, class_type.__name__, 200)
 
 
 @main.route('/create/country', methods=['GET', 'POST'])
@@ -599,12 +567,11 @@ def location_by_id(id):
 @http_auth.login_required()
 def activity_by_id(id):
     res = by_id(user=http_auth.current_user, id=id, classtype=Activity)
-
     return res
 
 
 @main.route('/find_tour', methods=['GET', 'POST'])
-#@http_auth.login_required
+@http_auth.login_required
 def find_tour(data=None, user=None):
 
     if data==None: # ONLY DEV-PURPOSE
@@ -614,8 +581,6 @@ def find_tour(data=None, user=None):
         user = http_auth.current_user
 
     session = Session()
-
-
 
     if user not in session:
         user = session.query(User).get(user.id)
@@ -630,10 +595,9 @@ def find_tour(data=None, user=None):
                         Location.long < data["curr_long"] + 3 * data["max_dist"] / 100) \
                 .all()
         else:
-            return make_response(create_json_response(responses.MISSING_PARAMETER_422,
-                                                      ResponseMessages.FIND_MISSING_PARAMETER,
-                                                      data,
-                                                      Location.__name__), 422)
+            return create_response(data, responses.MISSING_PARAMETER_422, ResponseMessages.FIND_MISSING_PARAMETER,
+                                   Location.__name__, 422)
+
         schema = Location.get_schema(many=True, only=(str(LocationAttributes.NAME),
                                                       str(LocationAttributes.LATITUDE),
                                                       str(LocationAttributes.LONGITUDE),
@@ -641,10 +605,8 @@ def find_tour(data=None, user=None):
         locations = schema.dump(record_location)
 
         if record_location is None:
-            return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                      ResponseMessages.FIND_NO_RESULTS,
-                                                      data,
-                                                      Location.__name__), 400)
+            return create_response(data, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
+                                   Activity.__name__, 400)
         else:
 
             for i, loc in enumerate(locations):
@@ -694,20 +656,15 @@ def find_tour(data=None, user=None):
             act = [act[i] for i in idx_to_keep]
             activities = schema.dump(act)
             if len(activities) > 0:
-                return make_response(create_json_response(responses.SUCCESS_200,
-                                                          ResponseMessages.FIND_SUCCESS,
-                                                          activities,
-                                                          Activity.__name__), 200)
+                return create_response(activities, responses.SUCCESS_200,
+                                       ResponseMessages.FIND_SUCCESS, Activity.__name__, 200)
             else:
-                return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                          ResponseMessages.FIND_NO_RESULTS,
-                                                          data,
-                                                          Activity.__name__), 400)
+                return create_response(data, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
+                                       Activity.__name__, 400)
 
     else:
-        return make_response(create_json_response(responses.UNAUTHORIZED_403,
-                                                  ResponseMessages.FIND_NOT_AUTHORIZED,
-                                                  None), 403)
+        return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.FIND_NOT_AUTHORIZED,
+                               Activity.__name__, 403)
 
 
 @main.route('/find_tour_by_term', methods=['GET', 'POST'])
@@ -729,16 +686,12 @@ def find_tour_by_term():
             record_activities = session.query(Activity).filter(or_(Activity.name.ilike(search_term),
                                                                    Activity.description.ilike(search_term))).all()
         else:
-            return make_response(create_json_response(responses.MISSING_PARAMETER_422,
-                                                      ResponseMessages.FIND_MISSING_PARAMETER,
-                                                      data,
-                                                      Activity.__name__), 422)
+            return create_response(data, responses.MISSING_PARAMETER_422, ResponseMessages.FIND_MISSING_PARAMETER,
+                                   Activity.__name__, 422)
 
         if record_activities is None:
-            return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                      ResponseMessages.FIND_NO_RESULTS,
-                                                      data,
-                                                      Activity.__name__), 400)
+            return create_response(data, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
+                                   Activity.__name__, 400)
         else:
             schema = Activity.get_presentation_schema(many=[True if len(record_activities) > 1 else False],
                                                       only=(str(ActivityAttributes.NAME),
@@ -747,15 +700,12 @@ def find_tour_by_term():
                                                             str(ActivityAttributes.ACTIVITY_TYPE_ID)))
             activities = schema.dump(record_activities)
 
-            return make_response(create_json_response(responses.SUCCESS_200,
-                                                      ResponseMessages.FIND_SUCCESS,
-                                                      activities,
-                                                      Activity.__name__), 200)
+            return create_response(activities, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS,
+                                   Activity.__name__, 200)
 
     else:
-        return make_response(create_json_response(responses.UNAUTHORIZED_403,
-                                                  ResponseMessages.FIND_NOT_AUTHORIZED,
-                                                  None), 400)
+        return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.FIND_NOT_AUTHORIZED,
+                               Activity.__name__, 403)
 
 
 @main.route('/hike', methods=['POST'])
@@ -774,26 +724,21 @@ def add_hike():
     if activity is None:
         session.expunge_all()
         session.close()
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_DATA,
-                                                  None), 400)
+        return create_response(None, responses.BAD_REQUEST_400, ResponseMessages.MAIN_NO_DATA,
+                               HikeRelation.__name__, 400)
 
     if user is not None and user.can(Permission.FOLLOW):
         hike = user.add_hike(activity, session)
         res = hike.serialize()
         session.expunge_all()
         session.close()
-        return make_response(create_json_response(responses.SUCCESS_201,
-                                                  ResponseMessages.CREATE_SUCCESS,
-                                                  res,
-                                                  HikeRelation.__name__), 201)
+        return create_response(res, responses.SUCCESS_201, ResponseMessages.CREATE_SUCCESS, HikeRelation.__name__, 201)
 
     else:
         session.expunge_all()
         session.close()
-        return make_response(create_json_response(responses.UNAUTHORIZED_403,
-                                                  ResponseMessages.CREATE_NOT_AUTHORIZED,
-                                                  None), 403)
+        return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.CREATE_NOT_AUTHORIZED,
+                               HikeRelation.__name__, 403)
 
 
 @main.route('/un_hike', methods=['POST'])
@@ -812,25 +757,20 @@ def rem_hike():
     if activity is None:
         session.expunge_all()
         session.close()
-        return make_response(create_json_response(responses.BAD_REQUEST_400,
-                                                  ResponseMessages.MAIN_NO_DATA,
-                                                  None), 400)
+        return create_response(None, responses.BAD_REQUEST_400, ResponseMessages.MAIN_NO_DATA,
+                               HikeRelation.__name__, 400)
 
     if user is not None and user.can(Permission.FOLLOW):
         user.delete_hike(activity, session)
         session.expunge_all()
         session.close()
-        return make_response(create_json_response(responses.SUCCESS_201,
-                                                  ResponseMessages.CREATE_SUCCESS,
-                                                  None,
-                                                  HikeRelation.__name__), 201)
+        return create_response(None, responses.SUCCESS_201, ResponseMessages.CREATE_SUCCESS, HikeRelation.__name__, 201)
 
     else:
         session.expunge_all()
         session.close()
-        return make_response(create_json_response(responses.UNAUTHORIZED_403,
-                                                  ResponseMessages.CREATE_NOT_AUTHORIZED,
-                                                  None), 403)
+        return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.CREATE_NOT_AUTHORIZED,
+                               HikeRelation.__name__, 403)
 
 
 @main.route('/demo', methods=['GET']) # ONLY DEV-PURPOSE

@@ -2,6 +2,7 @@ from flask import Flask
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 from app.main import main as main_blueprint
@@ -26,5 +27,6 @@ def create_app(config_name):
 
     app.register_blueprint(main_blueprint, url_prefix='/main')
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
+    CORS(app)
 
     return app
