@@ -25,7 +25,7 @@ class User(Entity, Base):
     session_id = Column(String, nullable=False)
     last_updated_by = Column(String, nullable=False)
     hiked = relationship(HikeRelation, foreign_keys=[HikeRelation.user_id], lazy='dynamic')
-    comments = relationship(Comment, foreign_keys=[Comment.author_id], lazy='dynamic')
+    comments = relationship(Comment, foreign_keys=[Comment.author_id], lazy='dynamic', backref='author')
 
     def __init__(self, username, email, password, created_by, role_id=1):
         Entity.__init__(self)

@@ -1,4 +1,5 @@
 from flask import Blueprint, request as rq
+from flask_cors import cross_origin
 from sqlalchemy import or_, and_
 from sqlalchemy.exc import IntegrityError
 
@@ -42,7 +43,6 @@ def check_integrity_error(ie, session, class_type):
 
 
 def create(req, user, class_type):
-
     session = Session()
     data = req.get_json()
 
@@ -153,25 +153,9 @@ def by_id(user, id, classtype):
                                    classtype.__name__, 200)
 
 
-def list_all(class_type, req=None):
+def list_all(class_type, keys, typ, term=''):
     session = Session()
-    data = None
     res = None
-
-    if req is not None:
-        data = req.get_json()
-
-        if data is None:
-            session.expunge_all()
-            session.close()
-            return create_response(None, responses.BAD_REQUEST_400, ResponseMessages.MAIN_NO_DATA,
-                                   class_type.__name__, 400)
-    else:
-        data = {}
-
-    term = data.get("term") if data.get("term") is not None else ''
-    keys = data.get("keys")
-    typ = data.get("typ")
 
     if term != '' and keys is None:
         search_term = '%{}%'.format(term)
@@ -285,7 +269,6 @@ def list_all(class_type, req=None):
 @main.route('/create/country', methods=['GET', 'POST'])
 @http_auth.login_required
 def create_country():
-
     resp = create(req=rq, user=http_auth.current_user, class_type=Country)
 
     return resp
@@ -419,10 +402,10 @@ def list_country():
     return res
 
 
-@main.route('/list/country', methods=['POST'])
+@main.route('/list/country', methods=['GET'])
 @http_auth.login_required
 def list_country_param():
-    res = list_all(Country, rq)
+    res = list_all(Country, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -435,10 +418,10 @@ def list_region():
     return res
 
 
-@main.route('/list/region', methods=['POST'])
+@main.route('/list/region', methods=['GET'])
 @http_auth.login_required
 def list_region_param():
-    res = list_all(Region, rq)
+    res = list_all(Region, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -451,10 +434,10 @@ def list_location_type():
     return res
 
 
-@main.route('/list/location_type', methods=['POST'])
+@main.route('/list/location_type', methods=['GET'])
 @http_auth.login_required
 def list_location_type_param():
-    res = list_all(LocationType, rq)
+    res = list_all(LocationType, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -467,10 +450,10 @@ def list_activity_type():
     return res
 
 
-@main.route('/list/activity_type', methods=['POST'])
+@main.route('/list/activity_type', methods=['GET'])
 @http_auth.login_required
 def list_activity_type_param():
-    res = list_all(ActivityType, rq)
+    res = list_all(ActivityType, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -491,18 +474,18 @@ def list_activity():
     return res
 
 
-@main.route('/list/activity', methods=['POST'])
+@main.route('/list/activity', methods=['GET'])
 @http_auth.login_required
 def list_activity_param():
-    res = list_all(Activity, rq)
+    res = list_all(Activity, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
 
-@main.route('/list/location', methods=['POST'])
+@main.route('/list/location', methods=['GET'])
 @http_auth.login_required
 def list_location_param():
-    res = list_all(Location, rq)
+    res = list_all(Location, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -515,7 +498,7 @@ def list_location():
     return res
 
 
-@main.route('/list/comment', methods=['GET', 'POST'])
+@main.route('/list/comment', methods=['GET'])
 @http_auth.login_required
 def list_comment():
     res = list_all(Comment)
@@ -523,7 +506,7 @@ def list_comment():
     return res
 
 
-@main.route('/list/hikerelation', methods=['GET', 'POST'])
+@main.route('/list/hikerelation', methods=['GET'])
 @http_auth.login_required
 def list_hikerelation():
     res = list_all(HikeRelation)
@@ -578,32 +561,30 @@ def activity_by_id(id):
     return res
 
 
-@main.route('/find_tour', methods=['GET', 'POST'])
+@main.route('/find_tour', methods=['GET'])
 @http_auth.login_required
-def find_tour(data=None, user=None):
-
-    if data==None: # ONLY DEV-PURPOSE
-        data = rq.get_json()
-
-    if user == None: # ONLY DEV-PURPOSE
-        user = http_auth.current_user
-
+def find_tour():
     session = Session()
+    user = http_auth.current_user
+
+    curr_lat = float(rq.args.get('lat'))
+    curr_long = float(rq.args.get('long'))
+    max_dist = int(rq.args.get('dist'))
 
     if user not in session:
         user = session.query(User).get(user.id)
 
     if user is not None and user.can(Permission.READ):
 
-        if data.get("curr_lat"):
+        if curr_lat:
             record_location = session.query(Location) \
-                .filter(Location.lat > data["curr_lat"] - 3 * data["max_dist"] / 100,
-                        Location.lat < data["curr_lat"] + 3 * data["max_dist"] / 100,
-                        Location.long > data["curr_long"] - 3 * data["max_dist"] / 100,
-                        Location.long < data["curr_long"] + 3 * data["max_dist"] / 100) \
+                .filter(Location.lat > curr_lat - 3 * max_dist / 100,
+                        Location.lat < curr_lat + 3 * max_dist / 100,
+                        Location.long > curr_long - 3 * max_dist / 100,
+                        Location.long < curr_long + 3 * max_dist / 100) \
                 .all()
         else:
-            return create_response(data, responses.MISSING_PARAMETER_422, ResponseMessages.FIND_MISSING_PARAMETER,
+            return create_response(None, responses.MISSING_PARAMETER_422, ResponseMessages.FIND_MISSING_PARAMETER,
                                    Location.__name__, 422)
 
         schema = Location.get_schema(many=True, only=(str(LocationAttributes.NAME),
@@ -613,14 +594,14 @@ def find_tour(data=None, user=None):
         locations = schema.dump(record_location)
 
         if record_location is None:
-            return create_response(data, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
+            return create_response(None, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
                                    Activity.__name__, 400)
         else:
 
             for i, loc in enumerate(locations):
                 loc.update({"dist": distance_between_coordinates(loc["lat"], loc["long"],
-                                                                 data["curr_lat"], data["curr_long"])})
-            locations = [i for i in locations if i['dist'] < data["max_dist"]]
+                                                                 curr_lat, curr_long)})
+            locations = [i for i in locations if i['dist'] < max_dist]
             locations.sort(key=sort_by_dist)
             locations = dict((item['id'], item) for item in locations)
 
@@ -659,7 +640,7 @@ def find_tour(data=None, user=None):
                 return create_response(activities, responses.SUCCESS_200,
                                        ResponseMessages.FIND_SUCCESS, Activity.__name__, 200)
             else:
-                return create_response(data, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
+                return create_response(None, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
                                        Activity.__name__, 400)
 
     else:
@@ -667,12 +648,10 @@ def find_tour(data=None, user=None):
                                Activity.__name__, 403)
 
 
-@main.route('/find_tour_by_term', methods=['GET', 'POST'])
+@main.route('/find_tour_by_term/<term>', methods=['GET'])
 @http_auth.login_required
-def find_tour_by_term():
-
+def find_tour_by_term(term):
     session = Session()
-    data = rq.get_json()
     user = http_auth.current_user
 
     if user not in session:
@@ -680,17 +659,12 @@ def find_tour_by_term():
 
     if user is not None and user.can(Permission.READ):
 
-        if data.get('search_term'):
-            term = data.get("search_term")
-            search_term = '%{}%'.format(term)
-            record_activities = session.query(Activity).filter(or_(Activity.name.ilike(search_term),
-                                                                   Activity.description.ilike(search_term))).all()
-        else:
-            return create_response(data, responses.MISSING_PARAMETER_422, ResponseMessages.FIND_MISSING_PARAMETER,
-                                   Activity.__name__, 422)
+        search_term = '%{}%'.format(term)
+        record_activities = session.query(Activity).filter(or_(Activity.name.ilike(search_term),
+                                                               Activity.description.ilike(search_term))).all()
 
         if record_activities is None:
-            return create_response(data, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
+            return create_response(None, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
                                    Activity.__name__, 400)
         else:
 
@@ -711,18 +685,16 @@ def find_tour_by_term():
                                Activity.__name__, 403)
 
 
-@main.route('/hike', methods=['POST'])
+@main.route('/hike/<act_id>', methods=['POST'])
 @http_auth.login_required
-def add_hike():
-
+def add_hike(act_id):
     session = Session()
-    data = rq.get_json()
     user = http_auth.current_user
 
     if user not in session:
         user = session.query(User).get(user.id)
 
-    activity = session.query(Activity).filter(Activity.id == data.get('activity_id')).first()
+    activity = session.query(Activity).filter(Activity.id == act_id).first()
 
     if activity is None:
         session.expunge_all()
@@ -744,18 +716,16 @@ def add_hike():
                                HikeRelation.__name__, 403)
 
 
-@main.route('/un_hike', methods=['POST'])
+@main.route('/un_hike/<act_id>', methods=['POST'])
 @http_auth.login_required
-def rem_hike():
-
+def rem_hike(act_id):
     session = Session()
-    data = rq.get_json()
     user = http_auth.current_user
 
     if user not in session:
         user = session.query(User).get(user.id)
 
-    activity = session.query(Activity).filter(Activity.id == data.get(ActivityAttributes.ID)).first()
+    activity = session.query(Activity).filter(Activity.id == act_id).first()
 
     if activity is None:
         session.expunge_all()
@@ -774,11 +744,3 @@ def rem_hike():
         session.close()
         return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.CREATE_NOT_AUTHORIZED,
                                HikeRelation.__name__, 403)
-
-
-@main.route('/demo', methods=['GET']) # ONLY DEV-PURPOSE
-def demo():
-    json = {'curr_lat': 47.758, 'curr_long': 8.123, 'max_dist': 100}
-    user = Session().query(User).get(16)
-    resp = find_tour(data=json, user=user)
-    return resp

@@ -18,6 +18,7 @@ from app.entities.comment import Comment
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 
 @app.shell_context_processor
