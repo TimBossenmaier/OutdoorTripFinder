@@ -40,6 +40,14 @@ class Country(Entity, Base):
         schema = CountryInsertSchema()
         return schema.dump(self)
 
+    def convert_to_presentation_schema(self, only=(), **kwargs):
+        schema = CountryPresentationSchema(only=only if len(only) > 0 else None)
+        dump = schema.dump(self)
+        for key, value in kwargs.items():
+            dump.update({key: value})
+
+        return dump
+
     def serialize(self):
         country = CountrySchema().dump(self)
 
@@ -66,6 +74,10 @@ class CountrySchema(EntitySchema):
 class CountryInsertSchema(Schema):
     name = fields.String()
     created_by = fields.Integer()
+
+
+class CountryPresentationSchema(CountrySchema):
+    id = fields.Integer()
 
 
 class CountryAttributes(Enum):

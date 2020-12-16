@@ -59,7 +59,6 @@ def create(req, user, class_type):
             res = schema.dump(class_instance.create(session))
 
         except IntegrityError as ie:
-            # TODO: check also for not existing values
             check_result = check_integrity_error(ie, session, class_type)
 
             if check_result is None:
@@ -80,8 +79,7 @@ def create(req, user, class_type):
                                class_type.__name__, 201)
 
 
-def update(req, user,  class_type):
-
+def update(req, user, class_type):
     session = Session()
     data = req.get_json()
 
@@ -134,7 +132,17 @@ def by_id(user, id, classtype):
         entity = session.query(classtype).get(id)
 
         if entity is not None:
-            res = entity.convert_to_insert_schema()
+            if classtype == Activity:
+                res = entity.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
+                                                                  str(ActivityAttributes.ID),
+                                                                  str(ActivityAttributes.DESCRIPTION),
+                                                                  str(ActivityAttributes.SOURCE)),
+                                                            **{
+                                                                'activity_type': entity.activity_type.name
+                                                            })
+            else:
+                res = entity.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
+                                                                  str(ActivityAttributes.ID)))
             session.expunge_all()
             session.close()
             return create_response(res, responses.SUCCESS_200, ResponseMessages.LIST_SUCCESS, classtype.__name__, 200)
@@ -614,47 +622,39 @@ def find_tour(data=None, user=None):
                                                                  data["curr_lat"], data["curr_long"])})
             locations = [i for i in locations if i['dist'] < data["max_dist"]]
             locations.sort(key=sort_by_dist)
-            ids = [int(i['id']) for i in locations]
+            locations = dict((item['id'], item) for item in locations)
 
             record_activities = session.query(Activity) \
                 .join(ActivityType) \
                 .join(LocationActivity) \
                 .join(Location).join(Region) \
                 .join(Country) \
-                .filter(Location.id.in_(ids)) \
+                .filter(Location.id.in_(locations.keys())) \
                 .all()
 
-            schema = Activity.get_presentation_schema(many=True)
+            activities = [a.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
+                                                          str(ActivityAttributes.ID)
+                                                          ),
+                                                    **{
+                                                        'location': a.locations[0].location.name,
+                                                        'region': a.locations[0].location.region.name,
+                                                        'distance': locations.get(a.id)['dist'] if locations.get(a.id)
+                                                        else None
+                                                    }
+                                                    ) for a in record_activities]
 
-            act = []
-            for rec in record_activities:
-                for loc in rec.locations:
-                    activity_pres = {
-                        'name': rec.name,
-                        'description': rec.description,
-                        'activity_type': rec.activity_type.name,
-                        'source': rec.source,
-                        'save_path': rec.save_path,
-                        'location': loc.location.name,
-                        'region': loc.location.region.name,
-                        'country': loc.location.region.country.name,
-                        'distance': [x['dist'] for x in locations if x['id'] == loc.location_id][0] if len(
-                            [x['dist'] for x in locations if x['id'] == loc.location_id]) > 0 else 1000
-                    }
-                    act.append(activity_pres)
-            act = sorted(act, key=lambda k: k['distance'])
+            activities = sorted(activities, key=lambda k: k['distance'])
 
             # keep only one entry per activity
             activity_names = set()
             idx_to_keep = []
-            for idx, item in enumerate(act):
+            for idx, item in enumerate(activities):
 
                 if item["name"] not in activity_names:
                     activity_names.add(item["name"])
                     idx_to_keep.append(idx)
 
-            act = [act[i] for i in idx_to_keep]
-            activities = schema.dump(act)
+            activities = [activities[i] for i in idx_to_keep]
             if len(activities) > 0:
                 return create_response(activities, responses.SUCCESS_200,
                                        ResponseMessages.FIND_SUCCESS, Activity.__name__, 200)
@@ -693,12 +693,15 @@ def find_tour_by_term():
             return create_response(data, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
                                    Activity.__name__, 400)
         else:
-            schema = Activity.get_presentation_schema(many=[True if len(record_activities) > 1 else False],
-                                                      only=(str(ActivityAttributes.NAME),
-                                                            str(ActivityAttributes.DESCRIPTION),
-                                                            str(ActivityAttributes.MULTI_DAY),
-                                                            str(ActivityAttributes.ACTIVITY_TYPE_ID)))
-            activities = schema.dump(record_activities)
+
+            activities = [act.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
+                                                                   str(ActivityAttributes.ID)
+                                                                   ),
+                                                             **{
+                                                                 'location': act.locations[0].location.name,
+                                                                 'region': act.locations[0].location.region.name
+                                                             }
+                                                             ) for act in record_activities]
 
             return create_response(activities, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS,
                                    Activity.__name__, 200)

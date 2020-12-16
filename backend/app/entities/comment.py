@@ -49,6 +49,14 @@ class Comment(Entity, Base):
         schema = CommentInsertSchema()
         return schema.dump(self)
 
+    def convert_to_presentation_schema(self, only=(), **kwargs):
+        schema = CommentPresentationSchema(only=only if len(only) > 0 else None)
+        dump = schema.dump(self)
+        for key, value in kwargs.items():
+            dump.update({key: value})
+
+        return dump
+
     def serialize(self):
         com = CommentSchema().dump(self)
 
@@ -81,6 +89,10 @@ class CommentInsertSchema(Schema):
     author_id = fields.Integer()
     activity_id = fields.Integer()
     created_by = fields.Integer()
+
+
+class CommentPresentationSchema(CommentSchema):
+    id = fields.Integer()
 
 
 class CommentAttributes(Enum):
