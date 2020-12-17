@@ -16,10 +16,10 @@ class Comment(Entity, Base):
     activity_id = Column(Integer, ForeignKey('activities.id'))
     last_updated_by = Column(Integer, ForeignKey('users.id'), nullable=False)
 
-    def __init__(self, body, author_id, activity_id, created_by):
+    def __init__(self, body, activity_id, created_by):
         Entity.__init__(self)
         self.body = body
-        self.author_id = author_id
+        self.author_id = created_by
         self.activity_id = activity_id
         self.last_updated_by = created_by
 
