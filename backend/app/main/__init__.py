@@ -76,7 +76,7 @@ def create(req, user, class_type):
         session.expunge_all()
         session.close()
         return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.CREATE_NOT_AUTHORIZED,
-                               class_type.__name__, 201)
+                               class_type.__name__, 403)
 
 
 def update(req, user, class_type):
@@ -673,7 +673,8 @@ def find_tour_by_term(term):
                                                                    ),
                                                              **{
                                                                  'location': act.locations[0].location.name,
-                                                                 'region': act.locations[0].location.region.name
+                                                                 'region': act.locations[0].location.region.name,
+                                                                 'country_short': act.locations[0].location.region.country.abbreviation
                                                              }
                                                              ) for act in record_activities]
 
