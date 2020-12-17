@@ -11,11 +11,13 @@ class Country(Entity, Base):
     __tablename__ = 'countries'
 
     name = Column(String, nullable=False, unique=True)
+    abbreviation = Column(String, nullable=False, unique=True)
     last_updated_by = Column(Integer, ForeignKey('users.id'), nullable=False)
 
-    def __init__(self, name, created_by):
+    def __init__(self, name, abbreviation, created_by):
         Entity.__init__(self)
         self.name = name
+        self.abbreviation = abbreviation
         self.last_updated_by = created_by
 
     def create(self, session):
@@ -73,6 +75,7 @@ class CountrySchema(EntitySchema):
 
 class CountryInsertSchema(Schema):
     name = fields.String()
+    abbreviation = fields.String()
     created_by = fields.Integer()
 
 
@@ -82,6 +85,7 @@ class CountryPresentationSchema(CountrySchema):
 
 class CountryAttributes(Enum):
     NAME = 'name'
+    ABBREVIATION = 'abbreviation'
     LAST_UPDATED_BY = 'last_updated_by'
     ID = 'id'
     CREATED_AT = 'created_at'
