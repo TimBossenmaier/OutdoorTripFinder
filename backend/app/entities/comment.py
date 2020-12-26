@@ -16,10 +16,10 @@ class Comment(Entity, Base):
     activity_id = Column(Integer, ForeignKey('activities.id'))
     last_updated_by = Column(Integer, ForeignKey('users.id'), nullable=False)
 
-    def __init__(self, body, author_id, activity_id, created_by):
+    def __init__(self, body, activity_id, created_by):
         Entity.__init__(self)
         self.body = body
-        self.author_id = author_id
+        self.author_id = created_by
         self.activity_id = activity_id
         self.last_updated_by = created_by
 
@@ -48,6 +48,14 @@ class Comment(Entity, Base):
     def convert_to_insert_schema(self):
         schema = CommentInsertSchema()
         return schema.dump(self)
+
+    def convert_to_presentation_schema(self, only=(), **kwargs):
+        schema = CommentPresentationSchema(only=only if len(only) > 0 else None)
+        dump = schema.dump(self)
+        for key, value in kwargs.items():
+            dump.update({key: value})
+
+        return dump
 
     def serialize(self):
         com = CommentSchema().dump(self)
@@ -81,6 +89,10 @@ class CommentInsertSchema(Schema):
     author_id = fields.Integer()
     activity_id = fields.Integer()
     created_by = fields.Integer()
+
+
+class CommentPresentationSchema(CommentSchema):
+    id = fields.Integer()
 
 
 class CommentAttributes(Enum):

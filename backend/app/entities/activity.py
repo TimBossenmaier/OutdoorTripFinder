@@ -54,7 +54,16 @@ class Activity(Entity, Base):
 
     def convert_to_insert_schema(self):
         schema = ActivityInsertSchema()
-        return schema.dump(self)
+        dump = schema.dump(self)
+        return dump
+
+    def convert_to_presentation_schema(self, only=(), **kwargs):
+        schema = ActivityPresentationSchema(only=only if len(only) > 0 else None)
+        dump = schema.dump(self)
+        for key, value in kwargs.items():
+            dump.update({key: value})
+
+        return dump
 
     def serialize(self):
         act = ActivitySchema().dump(self)
@@ -64,13 +73,6 @@ class Activity(Entity, Base):
     @staticmethod
     def get_insert_schema():
         return ActivityInsertSchema()
-
-    @staticmethod
-    def get_presentation_schema(many, only=()):
-        if len(only) == 0:
-            return ActivityPresentationSchema(many=many)
-        else:
-            return ActivityPresentationSchema(many=many, only=only)
 
     @staticmethod
     def get_schema(many, only):
@@ -102,11 +104,11 @@ class ActivityInsertSchema(Schema):
 
 
 class ActivityPresentationSchema(ActivitySchema):
+    id = fields.Integer()
     activity_type = fields.String()
     location = fields.String()
     region = fields.String()
     country = fields.String()
-    distance = fields.Number()
 
 
 class ActivityAttributes(Enum):

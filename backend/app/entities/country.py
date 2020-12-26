@@ -11,11 +11,13 @@ class Country(Entity, Base):
     __tablename__ = 'countries'
 
     name = Column(String, nullable=False, unique=True)
+    abbreviation = Column(String, nullable=False, unique=True)
     last_updated_by = Column(Integer, ForeignKey('users.id'), nullable=False)
 
-    def __init__(self, name, created_by):
+    def __init__(self, name, abbreviation, created_by):
         Entity.__init__(self)
         self.name = name
+        self.abbreviation = abbreviation
         self.last_updated_by = created_by
 
     def create(self, session):
@@ -39,6 +41,14 @@ class Country(Entity, Base):
     def convert_to_insert_schema(self):
         schema = CountryInsertSchema()
         return schema.dump(self)
+
+    def convert_to_presentation_schema(self, only=(), **kwargs):
+        schema = CountryPresentationSchema(only=only if len(only) > 0 else None)
+        dump = schema.dump(self)
+        for key, value in kwargs.items():
+            dump.update({key: value})
+
+        return dump
 
     def serialize(self):
         country = CountrySchema().dump(self)
@@ -65,11 +75,17 @@ class CountrySchema(EntitySchema):
 
 class CountryInsertSchema(Schema):
     name = fields.String()
+    abbreviation = fields.String()
     created_by = fields.Integer()
+
+
+class CountryPresentationSchema(CountrySchema):
+    id = fields.Integer()
 
 
 class CountryAttributes(Enum):
     NAME = 'name'
+    ABBREVIATION = 'abbreviation'
     LAST_UPDATED_BY = 'last_updated_by'
     ID = 'id'
     CREATED_AT = 'created_at'

@@ -3,7 +3,7 @@ Standard class of HTTP responses
 """
 
 from enum import Enum
-from flask import jsonify
+from flask import jsonify, make_response
 
 INVALID_FIELD_NAME_SENT_422 = {
     "http_code": 422,
@@ -56,12 +56,17 @@ SUCCESS_204 = {
 }
 
 
-def create_json_response(http_resp, message, data, classname=""):
+def create_response(data, http_resp, msg, classname, http_code):
 
-    http_resp.update({'message': str(message).format(classname)})
-    http_resp.update({'data': data})
+    resp = make_response(jsonify(data), http_code)
+    resp.headers['http_response'] = http_resp
+    resp.headers['msg'] = msg
+    resp.headers['class'] = classname
+    resp.headers.add("Access-Control-Allow-Origin", "*")
+    resp.headers.add("Access-Control-Allow-Headers", "*")
+    resp.headers.add("Access-Control-Allow-Methods", "*")
 
-    return jsonify(http_resp)
+    return resp
 
 
 class ResponseMessages(Enum):
