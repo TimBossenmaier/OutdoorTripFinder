@@ -136,7 +136,13 @@ def by_id(user, id, classtype):
                                                                   str(ActivityAttributes.DESCRIPTION),
                                                                   str(ActivityAttributes.SOURCE)),
                                                             **{
-                                                                'activity_type': entity.activity_type.name
+                                                                'activity_type': entity.activity_type.name,
+                                                                'locations': [loc.location.name
+                                                                              for loc in entity.locations],
+                                                                'location_types': [loc.location.location_type_id
+                                                                                   for loc in entity.locations],
+                                                                'countries': [loc.location.region.country.abbreviation
+                                                                              for loc in entity.locations]
                                                             })
             else:
                 res = entity.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
@@ -554,8 +560,8 @@ def find_tour():
     session = Session()
     user = http_auth.current_user
 
-    curr_lat = float(rq.args.get('lat'))
-    curr_long = float(rq.args.get('long'))
+    curr_lat = round(float(rq.args.get('lat')), 3)
+    curr_long = round(float(rq.args.get('long')), 3)
     max_dist = int(rq.args.get('dist'))
 
     if user not in session:
@@ -604,10 +610,15 @@ def find_tour():
                                                           str(ActivityAttributes.ID)
                                                           ),
                                                     **{
-                                                        'location': a.locations[0].location.name,
-                                                        'region': a.locations[0].location.region.name,
-                                                        'distance': locations.get(a.id)['dist'] if locations.get(a.id)
-                                                        else None
+                                                        'location': [loc.location.name
+                                                                     for loc in a.locations
+                                                                     if locations.get(loc.location_id)] [0],
+                                                        'region': [loc.location.region.name
+                                                                     for loc in a.locations
+                                                                     if locations.get(loc.location_id)] [0],
+                                                        'distance': [locations.get(loc.location_id)['dist']
+                                                                     for loc in a.locations
+                                                                     if locations.get(loc.location_id)] [0]
                                                     }
                                                     ) for a in record_activities]
 
@@ -661,7 +672,8 @@ def find_tour_by_term(term):
                                                              **{
                                                                  'location': act.locations[0].location.name,
                                                                  'region': act.locations[0].location.region.name,
-                                                                 'country_short': act.locations[0].location.region.country.abbreviation
+                                                                 'country_short':
+                                                                 act.locations[0].location.region.country.abbreviation
                                                              }
                                                              ) for act in record_activities]
 
