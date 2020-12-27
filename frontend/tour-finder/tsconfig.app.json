@@ -2,7 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": ["jquery"]
+    "types": ["jquery",
+    "semantic-ui",
+    "googlemaps"]
   },
   "files": [
     "src/main.ts",

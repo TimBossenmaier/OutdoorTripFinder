@@ -1,6 +1,4 @@
 import { Component, ViewChild, EventEmitter, Output, OnInit, AfterViewInit, Input} from '@angular/core';
-import { FormGroup, FormBuilder} from '@angular/forms';
-import {} from 'googlemaps';
 
 
 // TODO: custom styling https://developers.google.com/maps/documentation/javascript/places-autocomplete#place_autocomplete_service
