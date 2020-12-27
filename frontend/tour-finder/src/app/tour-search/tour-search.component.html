@@ -1,0 +1,58 @@
+<h1>Touren Finder</h1>
+<h2>Hier findest Du Wander-, Fahrrad- oder sonstige Outdoor-Touren.</h2>
+<div class="ui horizontal segments">
+  <div class="ui center aligned segment">
+    <h3>Suche mittels Koordinaten</h3>
+    <form class="ui form" [formGroup]="coordinateForm" (ngSubmit)="submitForm()">
+      <div class="three fields">
+        <div class="field">
+          <label>Längengrad</label>
+          <div class="ui icon input">
+            <input type="text" formControlName="long" placeholder="7.281" required="required">
+            <i class="map marker alternate icon"></i>
+          </div>
+        </div>
+        <div class="field">
+          <label>Breitengrad</label>
+          <div class="ui icon input">
+            <input type="text" formControlName="lat" placeholder="49.231" required="required">
+            <i class="map marker alternate icon"></i>
+          </div>
+        </div>
+        <div class="field">
+          <label>max. Entfernung</label>
+          <div class="ui right labeled input">
+            <input type="text" formControlName="dist" placeholder="20" required="required">
+            <div class="ui basic label">km</div>
+          </div>
+        </div>
+      </div>
+      <button class="ui button" type="submit" [disabled]="coordinateForm.invalid">Finde Abenteuer</button>
+    </form>
+  </div>
+  <div class="ui center aligned segment">
+    <h3>Suche mittels Ortschaften</h3>
+    <TestGoogleComponent addressType="geocode" (coordinates)="searchLocation($event)"></TestGoogleComponent>
+    <br>
+    <br>
+    <form class="ui form" [formGroup]="googleForm" (ngSubmit)="search()">
+      <div class="two fields">
+        <div class="field">
+          <label>max. Entfernung</label>
+          <div class="ui right labeled input">
+            <input type="text" placeholder="20" required="required" formControlName="dist">
+            <div class="ui basic label">km</div>
+          </div>
+        </div>
+        <div class="field">
+          <br>
+          <button class="ui button" type="submit" [disabled]="googleForm.invalid">Finde Abenteuer</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="ui center aligned segment">
+    <h3>Suche mittels Schlagwörtern</h3>
+    <tf-search></tf-search>
+  </div>
+</div>

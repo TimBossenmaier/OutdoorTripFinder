@@ -1,6 +1,7 @@
-from flask import Blueprint, request as rq
-from flask_cors import cross_origin
-from sqlalchemy import or_, and_
+import os
+
+from flask import Blueprint, request as rq, send_file
+from sqlalchemy import or_, and_, func
 from sqlalchemy.exc import IntegrityError
 
 from app.auth import http_auth
@@ -19,6 +20,7 @@ from app.main.error_handling import investigate_integrity_error
 from app.utils import responses
 from app.utils.responses import ResponseMessages, create_response
 from app.utils.helpers import distance_between_coordinates, sort_by_dist
+from config import Config
 
 main = Blueprint('main', __name__)
 
@@ -42,9 +44,8 @@ def check_integrity_error(ie, session, class_type):
         return None
 
 
-def create(req, user, class_type):
+def create(data, user, class_type):
     session = Session()
-    data = req.get_json()
 
     if user not in session:
         user = session.query(User).get(user.id)
@@ -79,9 +80,8 @@ def create(req, user, class_type):
                                class_type.__name__, 403)
 
 
-def update(req, user, class_type):
+def update(data, user, class_type):
     session = Session()
-    data = req.get_json()
 
     if user not in session:
         user = session.query(User).get(user.id)
@@ -121,6 +121,24 @@ def update(req, user, class_type):
                                class_type.__name__, 403)
 
 
+def count(user, class_type, **kwargs):
+
+    session = Session()
+    res = None
+
+    if user not in session:
+        user = session.query(User).get(user.id)
+
+    if user is not None and user.can(Permission.READ):
+
+        count = session.query(class_type).filter_by(**kwargs).count()
+        res = count
+        return create_response(res, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS, class_type, 200)
+
+    else:
+        return create_response(res, responses.UNAUTHORIZED_403, ResponseMessages.FIND_NOT_AUTHORIZED, class_type, 403)
+
+
 def by_id(user, id, classtype):
     session = Session()
     res = None
@@ -138,7 +156,13 @@ def by_id(user, id, classtype):
                                                                   str(ActivityAttributes.DESCRIPTION),
                                                                   str(ActivityAttributes.SOURCE)),
                                                             **{
-                                                                'activity_type': entity.activity_type.name
+                                                                'activity_type': entity.activity_type.name,
+                                                                'locations': [loc.location.name
+                                                                              for loc in entity.locations],
+                                                                'location_types': [loc.location.location_type_id
+                                                                                   for loc in entity.locations],
+                                                                'countries': [loc.location.region.country.abbreviation
+                                                                              for loc in entity.locations]
                                                             })
             else:
                 res = entity.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
@@ -153,7 +177,7 @@ def by_id(user, id, classtype):
                                    classtype.__name__, 200)
 
 
-def list_all(class_type, keys, typ, term=''):
+def list_all(class_type, keys=None, typ=None, term=''):
     session = Session()
     res = None
 
@@ -269,7 +293,7 @@ def list_all(class_type, keys, typ, term=''):
 @main.route('/create/country', methods=['GET', 'POST'])
 @http_auth.login_required
 def create_country():
-    resp = create(req=rq, user=http_auth.current_user, class_type=Country)
+    resp = create(data=rq.get_json(), user=http_auth.current_user, class_type=Country)
 
     return resp
 
@@ -277,7 +301,7 @@ def create_country():
 @main.route('/create/region', methods=['GET', 'POST'])
 @http_auth.login_required
 def create_region():
-    resp = create(req=rq, user=http_auth.current_user, class_type=Region)
+    resp = create(data=rq.get_json(), user=http_auth.current_user, class_type=Region)
 
     return resp
 
@@ -285,7 +309,7 @@ def create_region():
 @main.route('/create/location_type', methods=['GET', 'POST'])
 @http_auth.login_required
 def create_location_type():
-    resp = create(req=rq, user=http_auth.current_user, class_type=LocationType)
+    resp = create(data=rq.get_json(), user=http_auth.current_user, class_type=LocationType)
 
     return resp
 
@@ -293,7 +317,7 @@ def create_location_type():
 @main.route('/create/activity_type', methods=['GET', 'POST'])
 @http_auth.login_required
 def create_activity_type():
-    resp = create(req=rq, user=http_auth.current_user, class_type=ActivityType)
+    resp = create(data=rq.get_json(), user=http_auth.current_user, class_type=ActivityType)
 
     return resp
 
@@ -301,7 +325,7 @@ def create_activity_type():
 @main.route('/create/location_activity', methods=['GET', 'POST'])
 @http_auth.login_required
 def create_activity_location():
-    resp = create(req=rq, user=http_auth.current_user, class_type=LocationActivity)
+    resp = create(data=rq.get_json(), user=http_auth.current_user, class_type=LocationActivity)
 
     return resp
 
@@ -309,7 +333,7 @@ def create_activity_location():
 @main.route('/create/activity', methods=['GET', 'POST'])
 @http_auth.login_required
 def create_activity():
-    resp = create(req=rq, user=http_auth.current_user, class_type=Activity)
+    resp = create(data=rq.get_json(), user=http_auth.current_user, class_type=Activity)
 
     return resp
 
@@ -317,7 +341,7 @@ def create_activity():
 @main.route('/create/location', methods=['GET', 'POST'])
 @http_auth.login_required
 def create_location():
-    resp = create(req=rq, user=http_auth.current_user, class_type=Location)
+    resp = create(data=rq.get_json(), user=http_auth.current_user, class_type=Location)
 
     return resp
 
@@ -325,7 +349,7 @@ def create_location():
 @main.route('/create/comment', methods=["GET", "POST"])
 @http_auth.login_required
 def create_comment():
-    resp = create(req=rq, user=http_auth.current_user, class_type=Comment)
+    resp = create(data=rq.get_json(), user=http_auth.current_user, class_type=Comment)
 
     return resp
 
@@ -333,7 +357,7 @@ def create_comment():
 @main.route('/update/country', methods=['GET', 'POST'])
 @http_auth.login_required
 def update_country():
-    resp = update(req=rq, user=http_auth.current_user, class_type=Country)
+    resp = update(data=rq.get_json(), user=http_auth.current_user, class_type=Country)
 
     return resp
 
@@ -341,7 +365,7 @@ def update_country():
 @main.route('/update/region', methods=['GET', 'POST'])
 @http_auth.login_required
 def update_region():
-    resp = update(req=rq, user=http_auth.current_user, class_type=Region)
+    resp = update(data=rq.get_json(), user=http_auth.current_user, class_type=Region)
 
     return resp
 
@@ -349,7 +373,7 @@ def update_region():
 @main.route('/update/location_type', methods=['GET', 'POST'])
 @http_auth.login_required
 def update_location_type():
-    resp = update(req=rq, user=http_auth.current_user, class_type=LocationType)
+    resp = update(data=rq.get_json(), user=http_auth.current_user, class_type=LocationType)
 
     return resp
 
@@ -357,7 +381,7 @@ def update_location_type():
 @main.route('/update/activity_type', methods=['GET', 'POST'])
 @http_auth.login_required
 def update_activity_type():
-    resp = update(req=rq, user=http_auth.current_user, class_type=ActivityType)
+    resp = update(data=rq.get_json(), user=http_auth.current_user, class_type=ActivityType)
 
     return resp
 
@@ -365,7 +389,7 @@ def update_activity_type():
 @main.route('/update/location_activity', methods=['GET', 'POST'])
 @http_auth.login_required
 def update_location_activity():
-    resp = update(req=rq, user=http_auth.current_user, class_type=LocationActivity)
+    resp = update(data=rq.get_json(), user=http_auth.current_user, class_type=LocationActivity)
 
     return resp
 
@@ -373,7 +397,7 @@ def update_location_activity():
 @main.route('/update/activity', methods=['GET', 'POST'])
 @http_auth.login_required
 def update_activity():
-    resp = update(req=rq, user=http_auth.current_user, class_type=Activity)
+    resp = update(data=rq.get_json(), user=http_auth.current_user, class_type=Activity)
 
     return resp
 
@@ -381,7 +405,7 @@ def update_activity():
 @main.route('/update/location', methods=['GET', 'POST'])
 @http_auth.login_required
 def update_location():
-    resp = update(req=rq, user=http_auth.current_user, class_type=Location)
+    resp = update(data=rq.get_json(), user=http_auth.current_user, class_type=Location)
 
     return resp
 
@@ -389,7 +413,7 @@ def update_location():
 @main.route('/update/comment', methods=['GET', 'POST'])
 @http_auth.login_required
 def update_comment():
-    resp = update(req=rq, user=http_auth.current_user, class_type=Comment)
+    resp = update(data=rq.get_json(), user=http_auth.current_user, class_type=Comment)
 
     return resp
 
@@ -397,15 +421,11 @@ def update_comment():
 @main.route('/list/country', methods=['GET'])
 @http_auth.login_required
 def list_country():
-    res = list_all(Country)
 
-    return res
-
-
-@main.route('/list/country', methods=['GET'])
-@http_auth.login_required
-def list_country_param():
-    res = list_all(Country, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    if len(rq.args) == 0:
+        res = list_all(Country)
+    else:
+        res = list_all(Country, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -413,15 +433,11 @@ def list_country_param():
 @main.route('/list/region', methods=['GET'])
 @http_auth.login_required
 def list_region():
-    res = list_all(Region)
 
-    return res
-
-
-@main.route('/list/region', methods=['GET'])
-@http_auth.login_required
-def list_region_param():
-    res = list_all(Region, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    if len(rq.args) == 0:
+        res = list_all(Region)
+    else:
+        res = list_all(Region, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -429,15 +445,11 @@ def list_region_param():
 @main.route('/list/location_type', methods=['GET'])
 @http_auth.login_required
 def list_location_type():
-    res = list_all(LocationType)
 
-    return res
-
-
-@main.route('/list/location_type', methods=['GET'])
-@http_auth.login_required
-def list_location_type_param():
-    res = list_all(LocationType, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    if len(rq.args) == 0:
+        res = list_all(LocationType)
+    else:
+        res = list_all(LocationType, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -445,15 +457,11 @@ def list_location_type_param():
 @main.route('/list/activity_type', methods=['GET'])
 @http_auth.login_required
 def list_activity_type():
-    res = list_all(ActivityType)
 
-    return res
-
-
-@main.route('/list/activity_type', methods=['GET'])
-@http_auth.login_required
-def list_activity_type_param():
-    res = list_all(ActivityType, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    if len(rq.args) == 0:
+        res = list_all(ActivityType)
+    else:
+        res = list_all(ActivityType, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -461,7 +469,11 @@ def list_activity_type_param():
 @main.route('/list/location_activity', methods=['GET'])
 @http_auth.login_required
 def list_location_activity():
-    res = list_all(LocationActivity)
+
+    if len(rq.args) == 0:
+        res = list_all(LocationActivity)
+    else:
+        res = list_all(LocationActivity, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -469,15 +481,11 @@ def list_location_activity():
 @main.route('/list/activity', methods=['GET'])
 @http_auth.login_required
 def list_activity():
-    res = list_all(Activity)
 
-    return res
-
-
-@main.route('/list/activity', methods=['GET'])
-@http_auth.login_required
-def list_activity_param():
-    res = list_all(Activity, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    if len(rq.args) == 0:
+        res = list_all(Activity)
+    else:
+        res = list_all(Activity, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -485,15 +493,11 @@ def list_activity_param():
 @main.route('/list/location', methods=['GET'])
 @http_auth.login_required
 def list_location_param():
-    res = list_all(Location, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
-    return res
-
-
-@main.route('/list/location', methods=['GET'])
-@http_auth.login_required
-def list_location():
-    res = list_all(Location)
+    if len(rq.args) == 0:
+        res = list_all(Location)
+    else:
+        res = list_all(Location, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -501,7 +505,11 @@ def list_location():
 @main.route('/list/comment', methods=['GET'])
 @http_auth.login_required
 def list_comment():
-    res = list_all(Comment)
+
+    if len(rq.args) == 0:
+        res = list_all(Comment)
+    else:
+        res = list_all(Comment, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
@@ -509,55 +517,60 @@ def list_comment():
 @main.route('/list/hikerelation', methods=['GET'])
 @http_auth.login_required
 def list_hikerelation():
-    res = list_all(HikeRelation)
+
+    if len(rq.args) == 0:
+        res = list_all(HikeRelation)
+    else:
+        res = list_all(HikeRelation, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
 
     return res
 
 
-@main.route('/country/<id>', methods=['GET'])
+
+@main.route('/country/<identifier>', methods=['GET'])
 @http_auth.login_required()
-def country_by_id(id):
-    res = by_id(user=http_auth.current_user, id=id, classtype=Country)
+def country_by_id(identifier):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=Country)
 
     return res
 
 
-@main.route('/region/<id>', methods=['GET'])
+@main.route('/region/<identifier>', methods=['GET'])
 @http_auth.login_required()
-def region_by_id(id):
-    res = by_id(user=http_auth.current_user, id=id, classtype=Region)
+def region_by_id(identifier):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=Region)
 
     return res
 
 
-@main.route('/location_type/<id>', methods=['GET'])
+@main.route('/location_type/<identifier>', methods=['GET'])
 @http_auth.login_required()
-def location_type_by_id(id):
-    res = by_id(user=http_auth.current_user, id=id, classtype=LocationType)
+def location_type_by_id(identifier):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=LocationType)
 
     return res
 
 
-@main.route('/activity_type/<id>', methods=['GET'])
+@main.route('/activity_type/<identifier>', methods=['GET'])
 @http_auth.login_required()
-def activity_type_by_id(id):
-    res = by_id(user=http_auth.current_user, id=id, classtype=ActivityType)
+def activity_type_by_id(identifier):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=ActivityType)
 
     return res
 
 
-@main.route('/location/<id>', methods=['GET'])
+@main.route('/location/<identifier>', methods=['GET'])
 @http_auth.login_required()
-def location_by_id(id):
-    res = by_id(user=http_auth.current_user, id=id, classtype=Location)
+def location_by_id(identifier):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=Location)
 
     return res
 
 
-@main.route('/activity/<id>', methods=['GET'])
+@main.route('/activity/<identifier>', methods=['GET'])
 @http_auth.login_required()
-def activity_by_id(id):
-    res = by_id(user=http_auth.current_user, id=id, classtype=Activity)
+def activity_by_id(identifier):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=Activity)
     return res
 
 
@@ -567,8 +580,8 @@ def find_tour():
     session = Session()
     user = http_auth.current_user
 
-    curr_lat = float(rq.args.get('lat'))
-    curr_long = float(rq.args.get('long'))
+    curr_lat = round(float(rq.args.get('lat')), 3)
+    curr_long = round(float(rq.args.get('long')), 3)
     max_dist = int(rq.args.get('dist'))
 
     if user not in session:
@@ -617,10 +630,15 @@ def find_tour():
                                                           str(ActivityAttributes.ID)
                                                           ),
                                                     **{
-                                                        'location': a.locations[0].location.name,
-                                                        'region': a.locations[0].location.region.name,
-                                                        'distance': locations.get(a.id)['dist'] if locations.get(a.id)
-                                                        else None
+                                                        'location': [loc.location.name
+                                                                     for loc in a.locations
+                                                                     if locations.get(loc.location_id)] [0],
+                                                        'region': [loc.location.region.name
+                                                                     for loc in a.locations
+                                                                     if locations.get(loc.location_id)] [0],
+                                                        'distance': [locations.get(loc.location_id)['dist']
+                                                                     for loc in a.locations
+                                                                     if locations.get(loc.location_id)] [0]
                                                     }
                                                     ) for a in record_activities]
 
@@ -640,11 +658,11 @@ def find_tour():
                 return create_response(activities, responses.SUCCESS_200,
                                        ResponseMessages.FIND_SUCCESS, Activity.__name__, 200)
             else:
-                return create_response(None, responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
+                return create_response([], responses.BAD_REQUEST_400, ResponseMessages.FIND_NO_RESULTS,
                                        Activity.__name__, 400)
 
     else:
-        return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.FIND_NOT_AUTHORIZED,
+        return create_response([], responses.UNAUTHORIZED_403, ResponseMessages.FIND_NOT_AUTHORIZED,
                                Activity.__name__, 403)
 
 
@@ -674,7 +692,8 @@ def find_tour_by_term(term):
                                                              **{
                                                                  'location': act.locations[0].location.name,
                                                                  'region': act.locations[0].location.region.name,
-                                                                 'country_short': act.locations[0].location.region.country.abbreviation
+                                                                 'country_short':
+                                                                 act.locations[0].location.region.country.abbreviation
                                                              }
                                                              ) for act in record_activities]
 
@@ -778,3 +797,85 @@ def find_comment_by_act(act_id):
         session.expunge_all()
         session.close()
         return create_response(res, responses.INVALID_INPUT_422, ResponseMessages.FIND_MISSING_PARAMETER, Comment, 422)
+
+
+@main.route('/file/<act_id>', methods=['GET'])
+@http_auth.login_required
+def get_file(act_id):
+
+    session = Session()
+    res = None
+
+    user = http_auth.current_user
+
+    if user not in session:
+        user = session.query(User).get(user.id)
+
+    if user is not  None and user.can(Permission.READ):
+
+        activity = session.query(Activity).get(act_id)
+
+        path_to_file = os.path.join(Config.PATH_PDF_STORAGE, activity.save_path)
+
+        return send_file(path_to_file, as_attachment=True)
+    else:
+        return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.FIND_NOT_AUTHORIZED, Activity, 403)
+
+
+@main.route('stats/hikes/<act_id>', methods=['GET'])
+@http_auth.login_required
+def get_no_hikes(act_id):
+
+    res = count(user=http_auth.current_user, class_type=HikeRelation, **{'activity_id': act_id})
+
+    return res
+
+
+@main.route('/stats', methods=['GET'])
+@http_auth.login_required
+def stats_general():
+
+    no_tours = count(user=http_auth.current_user, class_type=Activity).get_json()
+    no_country = count(user=http_auth.current_user, class_type=Country).get_json()
+    no_regions = count(user=http_auth.current_user, class_type=Region).get_json()
+    no_locations = count(user=http_auth.current_user, class_type=Location).get_json()
+
+    session = Session()
+
+    result = session.query(LocationActivity).join(Location).all()
+    countries = {}
+    regions = {}
+    for r in result:
+
+        if r.locations.region.country.abbreviation in countries.keys():
+            countries[r.locations.region.country.abbreviation] += 1
+        else:
+            countries.update({r.locations.region.country.abbreviation: 0})
+
+        if r.locations.region.name in regions.keys():
+            regions[r.locations.region.name] += 1
+        else:
+            regions.update({r.locations.region.name: 0})
+    countries = {k: v for k, v in sorted(countries.items(), key=lambda item: item[1], reverse=True)}
+    regions = {k: v for k, v in sorted(regions.items(), key=lambda item: item[1], reverse=True)}
+
+    result = session.query(Activity).join(ActivityType).all()
+    act_types = {}
+    for r in result:
+        if r.activity_type.name in act_types.keys():
+            act_types[r.activity_type.name] += 1
+        else:
+            act_types.update({r.activity_type.name: 0})
+    act_types = {k: v for k, v in sorted(act_types.items(), key=lambda item: item[1], reverse=True)}
+
+    result = {
+        'noTours': no_tours,
+        'noCountry': no_country,
+        'noRegion': no_regions,
+        'noLocation': no_locations,
+        'popCountry': list(countries.keys()) [0],
+        'popRegion': list(regions.keys()) [0],
+        'popActivityType': list(act_types.keys()) [0]
+    }
+
+    return create_response(result, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS, None, 200)

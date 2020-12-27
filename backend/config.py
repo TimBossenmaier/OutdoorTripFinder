@@ -25,6 +25,7 @@ class Config:
     TEST_DATABASE_PASSWORD = os.environ.get('TEST_DATABASE_PASSWORD')
     TEST_DATABASE_NAME = os.environ.get('TEST_DATABASE_NAME')
     TEST_DATABASE_HOST = os.environ.get('TEST_DATABASE_HOST')
+    PATH_PDF_STORAGE = os.environ.get('PDF_STORAGE')
 
     @staticmethod
     def init_app(app):

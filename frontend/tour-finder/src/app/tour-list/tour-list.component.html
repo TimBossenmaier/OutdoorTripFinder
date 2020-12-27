@@ -9,7 +9,12 @@
     <div class="ui large text loader">Touren werden gerade entdeckt...</div>
   </div>
 
-  <p *ngIf="tours && !tours.length">
-    Es wurden leider keine Touren gefunden.
-  </p>
+  <div class="field" *ngIf="tours && !tours.length">
+    <h1> Es wurden leider keine Touren gefunden. </h1>
+    <br>
+    <button routerLink="../home" class="ui left labeled icon button">
+      <i class="left arrow icon"></i>
+      Zurück zur Suche
+    </button>
+  </div>
 </div>
