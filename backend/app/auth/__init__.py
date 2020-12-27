@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from flask import Blueprint, request, make_response, current_app, url_for
+from flask import Blueprint, request, current_app, url_for, jsonify
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from itsdangerous import TimedJSONWebSignatureSerializer
@@ -160,9 +160,11 @@ def resend_confirmation():
             send_email(curr_user.email, 'Confirm Your Account', 'email/confirm',
                        username=curr_user.username, url=url)
             curr_user = curr_user.serialize()
-            return create_response(curr_user, responses.SUCCESS_200, ResponseMessages.AUTH_CONFIRMATION_RESEND, User.__name__, 200)
+            return create_response(curr_user, responses.SUCCESS_200, ResponseMessages.AUTH_CONFIRMATION_RESEND,
+                                   User.__name__, 200)
     else:
-        return create_response(data, responses.INVALID_INPUT_422, ResponseMessages.AUTH_INVALID_PARAMS, User.__name__, 422)
+        return create_response(data, responses.INVALID_INPUT_422, ResponseMessages.AUTH_INVALID_PARAMS,
+                               User.__name__, 422)
 
 
 @auth.route('/change_password', methods=['GET', 'POST'])
@@ -175,7 +177,8 @@ def change_password():
     if user is None:
         session.expunge_all()
         session.close()
-        return create_response(data, responses.INVALID_INPUT_422, ResponseMessages.AUTH_USERNAME_NOT_PROVIDED, User.__name__, 422)
+        return create_response(data, responses.INVALID_INPUT_422, ResponseMessages.AUTH_USERNAME_NOT_PROVIDED,
+                               User.__name__, 422)
     else:
         user.update_password(data["password_new"], session, user.username)
         user = user.serialize()
