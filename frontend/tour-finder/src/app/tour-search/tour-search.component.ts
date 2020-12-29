@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {FormBuilder, FormGroup} from '@angular/forms';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {TourDbService} from '../shared/tour-db.service';
 import {ActivatedRoute, Router} from '@angular/router';
 
@@ -12,7 +12,10 @@ export class TourSearchComponent implements OnInit {
 
   coordinateForm: FormGroup;
   googleForm: FormGroup;
+  countryForm: FormGroup;
   coordinates: {long, lat};
+  countries: {id, name, abbreviation} [];
+  regions: {id, name} [];
 
   constructor(private fb: FormBuilder,
               private tdb: TourDbService,
@@ -20,12 +23,31 @@ export class TourSearchComponent implements OnInit {
               private router: Router) { }
 
   ngOnInit(): void {
+    this.tdb.getCountries().subscribe(res => this.countries = res);
     this.initForm();
+    $('#regionDropdown')
+      .dropdown({
+        onChange: function() {
+          this.countryForm.patchValue({region: $('#regionDropdown').dropdown('get value')});
+        }
+          .bind(this)
+      })
+    ;
+    $('#countryDropdown')
+      .dropdown({
+        onChange: function() {
+          this.countryForm.patchValue({country: $('#countryDropdown').dropdown('get value')});
+          this.tdb.getRegionByCountry(this.countryForm.value.country.toString()).subscribe(res => this.regions = res);
+        }
+        .bind(this)
+      })
+    ;
   }
 
   private initForm() {
     if (this.coordinateForm) {return; }
     if (this.googleForm) {return; }
+    if (this.countryForm) {return; }
 
     this.coordinateForm = this.fb.group(
       {
@@ -38,6 +60,13 @@ export class TourSearchComponent implements OnInit {
     this.googleForm = this.fb.group(
       {
         dist: ''
+      }
+    );
+
+    this.countryForm = this.fb.group(
+      {
+        country: ['', Validators.required],
+        region:  ['']
       }
     );
   }
@@ -56,7 +85,6 @@ export class TourSearchComponent implements OnInit {
   }
 
   search() {
-    console.log('search');
     const formValue = this.googleForm.value;
     const search = {
       long: this.coordinates.long,
@@ -66,6 +94,11 @@ export class TourSearchComponent implements OnInit {
     this.googleForm.reset();
     this.router.navigate(['../', 'tours'],
       {relativeTo: this.route, queryParams: {...search}});
+  }
+
+  country() {
+    const formValue = this.countryForm.value;
+    console.log(formValue.country, formValue.region);
   }
 
   searchLocation(coordinates: any) {

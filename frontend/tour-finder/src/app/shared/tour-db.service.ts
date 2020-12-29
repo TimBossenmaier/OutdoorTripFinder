@@ -107,6 +107,24 @@ export class TourDbService {
       );
   }
 
+  getCountries(): Observable<any[]> {
+    return this.http.get(
+      `${this.apiURL}/main/list/country`)
+      .pipe(
+        retry(3),
+        catchError(this.errorHandler)
+    );
+  }
+
+  getRegionByCountry(countryID: string): Observable<any[]> {
+    return this.http.get(
+      `${this.apiURL}/main/list/region?keys=${countryID}`)
+      .pipe(
+        retry(3),
+        catchError(this.errorHandler)
+    );
+  }
+
   hike(actID: string): Observable<any> {
     return this.http.post(
       `${this.apiURL}/main/hike/${actID}`,
