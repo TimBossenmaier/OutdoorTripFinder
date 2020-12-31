@@ -131,7 +131,7 @@ export class TourDbService {
           column: 'name',
           dir: 'asc'
         },
-        output: ['name', 'id']
+        output: ['name', 'id', 'abbreviation']
       })
       .pipe(
         retry(3),
