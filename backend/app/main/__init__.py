@@ -757,6 +757,15 @@ def stats_general():
             act_types.update({r.activity_type.name: 0})
     act_types = {k: v for k, v in sorted(act_types.items(), key=lambda item: item[1], reverse=True)}
 
+    result = session.query(HikeRelation).join(Activity).all()
+    activities = {}
+    for r in result:
+        if r.activity.name in activities.keys():
+            activities[r.activity.name] += 1
+        else:
+            activities.update({r.activity.name: 1})
+    activities = {k: v for k, v in sorted(activities.items(), key=lambda item: item[1], reverse=True)}
+
     result = {
         'noTours': no_tours,
         'noCountry': no_country,
@@ -764,7 +773,8 @@ def stats_general():
         'noLocation': no_locations,
         'popCountry': list(countries.keys())[0],
         'popRegion': list(regions.keys())[0],
-        'popActivityType': list(act_types.keys())[0]
+        'popActivityType': list(act_types.keys())[0],
+        'popActivity': list(activities.keys())[0]
     }
 
     return create_response(result, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS, None, 200)
