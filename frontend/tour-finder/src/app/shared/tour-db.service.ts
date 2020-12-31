@@ -159,10 +159,9 @@ export class TourDbService {
     );
   }
 
-  hike(actID: string): Observable<any> {
-    return this.http.post(
-      `${this.apiURL}/main/hike/${actID}`,
-      {})
+  hike(actID: string, typ: string): Observable<any> {
+    return this.http.get(
+      `${this.apiURL}/main/hike/${actID}?typ=${typ}`)
       .pipe(
         retry(3),
         catchError(this.errorHandler)

@@ -17,6 +17,7 @@ commentForm: FormGroup;
 blob: Blob;
 fileType = '.pdf';
 hikes: number;
+userHiked: boolean;
 
   constructor(
     private tdb: TourDbService,
@@ -29,6 +30,13 @@ hikes: number;
     this.tdb.getTourByID(params.get('id').toString()).subscribe(t => this.tour = t);
     this.tdb.getCommentByAct(params.get('id').toString()).subscribe(c => this.comments = c);
     this.tdb.getHikes(params.get('id').toString()).subscribe(h => this.hikes = h);
+    this.tdb.hike(params.get('id').toString(), 'check').subscribe(h => this.userHiked = h);
+    $('#hikeButton')
+      .popup()
+    ;
+    $('#remHikeButton')
+      .popup()
+    ;
     this.initForm();
   }
 
@@ -57,8 +65,16 @@ hikes: number;
 
   addHike(): void {
     const params = this.route.snapshot.paramMap;
-    this.tdb.hike(params.get('id').toString()).subscribe();
+    this.tdb.hike(params.get('id').toString(), 'add').subscribe();
     this.tdb.getHikes(params.get('id').toString()).subscribe(h => this.hikes = h);
+    this.tdb.hike(params.get('id').toString(), 'check').subscribe(h => this.userHiked = h);
+    this.ngOnInit();
+  }
+
+  removeHike(): void {
+    const params = this.route.snapshot.paramMap;
+    this.tdb.hike(params.get('id').toString(), 'rem').subscribe();
+    this.ngOnInit();
   }
 
   submitForm() {

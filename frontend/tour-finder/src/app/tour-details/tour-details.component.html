@@ -24,7 +24,10 @@
             Wanderungen
           </div>
           <div class="ui labeled button" tabindex="0">
-            <div class="ui button" (click)="addHike()">
+            <div class="ui button" (click)="addHike()" *ngIf="!userHiked" data-tooltip="Füge diese Tour zu Deinen Erlebnissen hinzu" id="remHikeButton">
+              <img src="assets/icon_hike_boot.svg" class="ui image" width="15">
+            </div>
+            <div class="ui button" (click)="removeHike()" *ngIf="userHiked" data-tooltip="Entferne diese Tour aus Deinen Erlebnissen" id="hikeButton">
               <img src="assets/icon_hike_boot.svg" class="ui image" width="15">
             </div>
             <div class="ui basic label">{{hikes}}</div>
