@@ -739,12 +739,12 @@ def stats_general():
         if r.locations.region.country.abbreviation in countries.keys():
             countries[r.locations.region.country.abbreviation] += 1
         else:
-            countries.update({r.locations.region.country.abbreviation: 0})
+            countries.update({r.locations.region.country.abbreviation: 1})
 
         if r.locations.region.name in regions.keys():
             regions[r.locations.region.name] += 1
         else:
-            regions.update({r.locations.region.name: 0})
+            regions.update({r.locations.region.name: 1})
     countries = {k: v for k, v in sorted(countries.items(), key=lambda item: item[1], reverse=True)}
     regions = {k: v for k, v in sorted(regions.items(), key=lambda item: item[1], reverse=True)}
 
@@ -754,7 +754,7 @@ def stats_general():
         if r.activity_type.name in act_types.keys():
             act_types[r.activity_type.name] += 1
         else:
-            act_types.update({r.activity_type.name: 0})
+            act_types.update({r.activity_type.name: 1})
     act_types = {k: v for k, v in sorted(act_types.items(), key=lambda item: item[1], reverse=True)}
 
     result = session.query(HikeRelation).join(Activity).all()
