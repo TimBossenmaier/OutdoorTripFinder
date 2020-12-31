@@ -1,7 +1,9 @@
 import os
+import sqlalchemy as sql
 
 from flask import Blueprint, request as rq, send_file
-from sqlalchemy import or_, and_, func
+from flask_cors import cross_origin
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from app.auth import http_auth
@@ -122,7 +124,6 @@ def update(data, user, class_type):
 
 
 def count(user, class_type, **kwargs):
-
     session = Session()
     res = None
 
@@ -177,120 +178,59 @@ def by_id(user, id, classtype):
                                    classtype.__name__, 200)
 
 
-def list_all(class_type, keys=None, typ=None, term=''):
+def list_all(class_type, rq):
     session = Session()
     res = None
 
-    if term != '' and keys is None:
+    keys = rq.get_json().get('keys')
+    term = rq.get_json().get('term')
+    output = rq.get_json().get('output')
+    order_by = rq.get_json().get('order_by')
+
+    order_column = getattr(class_type, order_by.get('column'))
+    order_func = getattr(sql, order_by.get('dir'))
+
+    if term is not None and keys is None:
         search_term = '%{}%'.format(term)
-        res = session.query(class_type).filter(class_type.name.ilike(search_term)).order_by(class_type.id.asc()).all()
-    elif term == '' and keys is not None:
 
-        if class_type == Country:
-            session.expunge_all()
-            session.close()
-            return create_response(keys, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
-                                   class_type.__name__, 422)
-        else:
-            if keys.get(
-                    str(RegionAttributes.COUNTRY_ID)
-                    if class_type == Region
-                    else str(LocationAttributes.REGION_ID)):
-                res = session.query(Region if class_type == Region else Location).filter(
-                    Region.country_id.in_(keys.get(str(RegionAttributes.COUNTRY_ID)))
-                    if class_type == Region else
-                    Location.region_id.in_(keys.get(str(LocationAttributes.REGION_ID)))) \
-                    .order_by(class_type.id.asc()) \
-                    .all()
-            else:
-                session.expunge_all()
-                session.close()
-                return create_response(keys, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
-                                       class_type.__name__, 422)
+        res = session \
+            .query(class_type) \
+            .filter(class_type.name.ilike(search_term)) \
+            .order_by(class_type.id.asc() if order_by is None else order_func(order_column)) \
+            .all()
+    elif term is not None and keys is not None:
+        search_term = '%{}%'.format(term)
 
-    elif term != '' and keys is not None:
+        res = session \
+            .query(class_type) \
+            .filter(class_type.name.ilike(search_term)) \
+            .filter_by(**keys)\
+            .order_by(class_type.id.asc() if order_by is None else order_func(order_column)) \
+            .all()
 
-        if class_type == Country:
-            session.expunge_all()
-            session.close()
-            return create_response(keys, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
-                                   class_type.__name__, 422)
-        else:
-            if keys.get(
-                    str(RegionAttributes.COUNTRY_ID) if class_type == Region else str(LocationAttributes.REGION_ID)):
-                search_term = '%{}%'.format(term)
-                if keys.get(str(RegionAttributes.COUNTRY_ID)) is not None:
-                    res = session.query(Region).filter(
-                        and_(
-                            Region.country_id.in_(list(keys.get(str(RegionAttributes.COUNTRY_ID)))),
-                            Region.name.ilike(search_term))
-                    ) \
-                        .order_by(class_type.id.asc()) \
-                        .all()
-                elif keys.get(str(LocationAttributes.REGION_ID)) is not None:
-                    res = session.query(Location).filter(
-                        and_(
-                            Location.region_id.in_(keys.get(str(LocationAttributes.REGION_ID))),
-                            Location.name.ilike(search_term))
-                    ) \
-                        .order_by(class_type.id.asc()) \
-                        .all()
-            else:
-                session.expunge_all()
-                session.close()
-                return create_response(keys, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
-                                       class_type.__name__, 422)
-    elif typ is not None:
-        if class_type == Location and typ.get(str(LocationAttributes.LOCATION_TYPE_ID)):
-            res = session.query(Location) \
-                .filter(Location.location_type_id == typ.get(str(LocationAttributes.LOCATION_TYPE_ID))) \
-                .order_by(class_type.id.asc()) \
-                .all()
-        elif class_type == Activity and typ.get(str(ActivityAttributes.ACTIVITY_TYPE_ID)):
-            res = session.query(Activity) \
-                .filter(Activity.activity_type_id == typ.get(str(ActivityAttributes.ACTIVITY_TYPE_ID))) \
-                .order_by(class_type.id.asc()) \
-                .all()
-        else:
-            session.expunge_all()
-            session.close()
-            return create_response(typ, responses.INVALID_INPUT_422, ResponseMessages.LIST_INVALID_INPUT,
-                                   class_type.__name__, 422)
+    elif keys is not None:
+        res = session \
+            .query(class_type) \
+            .filter_by(**keys) \
+            .order_by(class_type.id.asc() if order_by is None else order_func(order_column)) \
+            .all()
     else:
-        res = session.query(class_type).order_by(class_type.id.asc()).all()
+        res = session\
+            .query(class_type)\
+            .order_by(class_type.id.asc() if order_by is None else order_func(order_column))\
+            .all()
 
-    if res is None:
-        session.expunge_all()
-        session.close()
-        return create_response(None, responses.INVALID_INPUT_422, ResponseMessages.LIST_EMPTY, class_type.__name__, 422)
-    else:
-        attributes = class_type.get_attributes()
-        if class_type == LocationActivity:
-            schema = LocationActivity.get_schema(many=True, only=[str(attributes.ID),
-                                                                  str(attributes.ACTIVITY_ID),
-                                                                  str(attributes.LOCATION_ID)])
-        elif class_type == HikeRelation:
-            schema = HikeRelation.get_schema(many=True, only=(str(attributes.ID),
-                                                              str(attributes.USER_ID),
-                                                              str(attributes.ACTIVITY_ID)))
-        elif class_type == Comment:
-            schema = Comment.get_schema(many=True, only=(str(attributes.ID),
-                                                         str(attributes.BODY),
-                                                         str(attributes.AUTHOR_ID),
-                                                         str(attributes.ACTIVITY_ID)))
-        else:
-            schema = class_type.get_schema(many=True,
-                                           only=((str(attributes.NAME), str(attributes.ID), str(attributes.REGION_ID))
-                                                 if class_type == Location
-                                                 else (str(attributes.NAME), str(attributes.ID))))
-        entities = schema.dump(res)
+    schema = class_type.get_schema(many=True, only=output)
 
-        session.expunge_all()
-        session.close()
-        return create_response(entities, responses.SUCCESS_200, ResponseMessages.LIST_SUCCESS, class_type.__name__, 200)
+    session.expunge_all()
+    session.close()
+
+    return create_response(schema.dump(res), responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS,
+                           class_type.__name__, 200)
 
 
 @main.route('/create/country', methods=['GET', 'POST'])
+@cross_origin()
 @http_auth.login_required
 def create_country():
     resp = create(data=rq.get_json(), user=http_auth.current_user, class_type=Country)
@@ -418,113 +358,85 @@ def update_comment():
     return resp
 
 
-@main.route('/list/country', methods=['GET'])
+@main.route('/list/country', methods=['POST'])
 @http_auth.login_required
 def list_country():
 
-    if len(rq.args) == 0:
-        res = list_all(Country)
-    else:
-        res = list_all(Country, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    res = list_all(Country, rq)
 
     return res
 
 
-@main.route('/list/region', methods=['GET'])
+@main.route('/list/region', methods=['POST'])
 @http_auth.login_required
 def list_region():
 
-    if len(rq.args) == 0:
-        res = list_all(Region)
-    else:
-        res = list_all(Region, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    res = list_all(Region, rq)
 
     return res
 
 
-@main.route('/list/location_type', methods=['GET'])
+@main.route('/list/location_type', methods=['POST'])
 @http_auth.login_required
 def list_location_type():
 
-    if len(rq.args) == 0:
-        res = list_all(LocationType)
-    else:
-        res = list_all(LocationType, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    res = list_all(LocationType, rq)
 
     return res
 
 
-@main.route('/list/activity_type', methods=['GET'])
+@main.route('/list/activity_type', methods=['POST'])
 @http_auth.login_required
 def list_activity_type():
 
-    if len(rq.args) == 0:
-        res = list_all(ActivityType)
-    else:
-        res = list_all(ActivityType, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    res = list_all(ActivityType, rq)
 
     return res
 
 
-@main.route('/list/location_activity', methods=['GET'])
+@main.route('/list/location_activity', methods=['POST'])
 @http_auth.login_required
 def list_location_activity():
 
-    if len(rq.args) == 0:
-        res = list_all(LocationActivity)
-    else:
-        res = list_all(LocationActivity, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    res = list_all(LocationActivity, rq)
 
     return res
 
 
-@main.route('/list/activity', methods=['GET'])
+@main.route('/list/activity', methods=['POST'])
 @http_auth.login_required
 def list_activity():
 
-    if len(rq.args) == 0:
-        res = list_all(Activity)
-    else:
-        res = list_all(Activity, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    res = list_all(Activity, rq)
 
     return res
 
 
-@main.route('/list/location', methods=['GET'])
+@main.route('/list/location', methods=['POST'])
 @http_auth.login_required
-def list_location_param():
+def list_location():
 
-    if len(rq.args) == 0:
-        res = list_all(Location)
-    else:
-        res = list_all(Location, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    res = list_all(Location, rq)
 
     return res
 
 
-@main.route('/list/comment', methods=['GET'])
+@main.route('/list/comment', methods=['POST'])
 @http_auth.login_required
 def list_comment():
 
-    if len(rq.args) == 0:
-        res = list_all(Comment)
-    else:
-        res = list_all(Comment, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    res = list_all(Comment, rq)
 
     return res
 
 
-@main.route('/list/hikerelation', methods=['GET'])
+@main.route('/list/hikerelation', methods=['POST'])
 @http_auth.login_required
 def list_hikerelation():
 
-    if len(rq.args) == 0:
-        res = list_all(HikeRelation)
-    else:
-        res = list_all(HikeRelation, keys=rq.args.get('keys'), typ=rq.args.get('typ'), term=rq.args.get('term'))
+    res = list_all(HikeRelation, rq)
 
     return res
-
 
 
 @main.route('/country/<identifier>', methods=['GET'])
