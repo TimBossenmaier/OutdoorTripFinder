@@ -90,8 +90,16 @@ export class TourDbService {
   }
 
   getActivityTypes(): Observable<ActivityType[]> {
-    return this.http.get<ActivityType[]>(
-      `${this.apiURL}/main/list/activity_type`)
+    return this.http.post<ActivityType[]>(
+      `${this.apiURL}/main/list/activity_type`,
+      {
+        order_by: {
+          column: 'name',
+          dir: 'asc'
+        },
+        output: ['name', 'id']
+      }
+      )
       .pipe(
         retry(3),
         catchError(this.errorHandler)
@@ -99,8 +107,16 @@ export class TourDbService {
   }
 
   getLocations(): Observable<Location[]> {
-    return  this.http.get<Location[]>(
-      `${this.apiURL}/main/list/location`)
+    return  this.http.post<Location[]>(
+      `${this.apiURL}/main/list/location`,
+      {
+        order_by: {
+          column: 'name',
+          dir: 'asc'
+        },
+        output: ['name', 'id']
+      }
+    )
       .pipe(
         retry(3),
         catchError(this.errorHandler)
@@ -108,8 +124,15 @@ export class TourDbService {
   }
 
   getCountries(): Observable<any[]> {
-    return this.http.get(
-      `${this.apiURL}/main/list/country`)
+    return this.http.post(
+      `${this.apiURL}/main/list/country`,
+      {
+        order_by: {
+          column: 'name',
+          dir: 'asc'
+        },
+        output: ['name', 'id']
+      })
       .pipe(
         retry(3),
         catchError(this.errorHandler)
@@ -117,8 +140,19 @@ export class TourDbService {
   }
 
   getRegionByCountry(countryID: string): Observable<any[]> {
-    return this.http.get(
-      `${this.apiURL}/main/list/region?keys=${countryID}`)
+    return this.http.post(
+      `${this.apiURL}/main/list/region`,
+      {
+        keys: {
+          country_id: countryID
+        },
+        order_by: {
+          column: 'name',
+          dir: 'asc'
+        },
+        output: ['name', 'id']
+      }
+    )
       .pipe(
         retry(3),
         catchError(this.errorHandler)
