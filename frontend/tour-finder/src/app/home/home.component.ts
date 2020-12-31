@@ -15,7 +15,8 @@ export class HomeComponent implements OnInit {
     noLocation: number,
     popCountry: string,
     popRegion: string,
-    popActivityType: string
+    popActivityType: string,
+    popActivity: string
   };
 
   constructor(private tdb: TourDbService) { }
