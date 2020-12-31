@@ -11,7 +11,7 @@ from app.entities.entity import Session
 from app.entities.hike_relations import HikeRelation
 from app.entities.user import Permission, User
 from app.entities.country import Country
-from app.entities.region import Region, RegionAttributes
+from app.entities.region import Region
 from app.entities.location_type import LocationType
 from app.entities.activity_type import ActivityType
 from app.entities.location_activity import LocationActivity
@@ -539,20 +539,20 @@ def find_tour():
                 .all()
 
             activities = [a.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
-                                                          str(ActivityAttributes.ID)
-                                                          ),
-                                                    **{
-                                                        'location': [loc.location.name
-                                                                     for loc in a.locations
-                                                                     if locations.get(loc.location_id)] [0],
-                                                        'region': [loc.location.region.name
-                                                                     for loc in a.locations
-                                                                     if locations.get(loc.location_id)] [0],
-                                                        'distance': [locations.get(loc.location_id)['dist']
-                                                                     for loc in a.locations
-                                                                     if locations.get(loc.location_id)] [0]
-                                                    }
-                                                    ) for a in record_activities]
+                                                                 str(ActivityAttributes.ID)
+                                                                 ),
+                                                           **{
+                                                               'location': [loc.location.name
+                                                                            for loc in a.locations
+                                                                            if locations.get(loc.location_id)][0],
+                                                               'region': [loc.location.region.name
+                                                                          for loc in a.locations
+                                                                          if locations.get(loc.location_id)][0],
+                                                               'distance': [locations.get(loc.location_id)['dist']
+                                                                            for loc in a.locations
+                                                                            if locations.get(loc.location_id)][0]
+                                                           }
+                                                           ) for a in record_activities]
 
             activities = sorted(activities, key=lambda k: k['distance'])
 
@@ -605,7 +605,7 @@ def find_tour_by_term(term):
                                                                  'location': act.locations[0].location.name,
                                                                  'region': act.locations[0].location.region.name,
                                                                  'country_short':
-                                                                 act.locations[0].location.region.country.abbreviation
+                                                                     act.locations[0].location.region.country.abbreviation
                                                              }
                                                              ) for act in record_activities]
 
@@ -691,8 +691,8 @@ def find_comment_by_act(act_id):
 
     if user is not None and user.can(Permission.READ):
         entities = session.query(Comment) \
-            .filter(Comment.activity_id == act_id)\
-            .filter(Comment.author_id == User.id)\
+            .filter(Comment.activity_id == act_id) \
+            .filter(Comment.author_id == User.id) \
             .all()
 
         if entities is not None:
@@ -714,7 +714,6 @@ def find_comment_by_act(act_id):
 @main.route('/file/<act_id>', methods=['GET'])
 @http_auth.login_required
 def get_file(act_id):
-
     session = Session()
     res = None
 
@@ -723,7 +722,7 @@ def get_file(act_id):
     if user not in session:
         user = session.query(User).get(user.id)
 
-    if user is not  None and user.can(Permission.READ):
+    if user is not None and user.can(Permission.READ):
 
         activity = session.query(Activity).get(act_id)
 
@@ -737,7 +736,6 @@ def get_file(act_id):
 @main.route('stats/hikes/<act_id>', methods=['GET'])
 @http_auth.login_required
 def get_no_hikes(act_id):
-
     res = count(user=http_auth.current_user, class_type=HikeRelation, **{'activity_id': act_id})
 
     return res
@@ -746,7 +744,6 @@ def get_no_hikes(act_id):
 @main.route('/stats', methods=['GET'])
 @http_auth.login_required
 def stats_general():
-
     no_tours = count(user=http_auth.current_user, class_type=Activity).get_json()
     no_country = count(user=http_auth.current_user, class_type=Country).get_json()
     no_regions = count(user=http_auth.current_user, class_type=Region).get_json()
@@ -785,9 +782,9 @@ def stats_general():
         'noCountry': no_country,
         'noRegion': no_regions,
         'noLocation': no_locations,
-        'popCountry': list(countries.keys()) [0],
-        'popRegion': list(regions.keys()) [0],
-        'popActivityType': list(act_types.keys()) [0]
+        'popCountry': list(countries.keys())[0],
+        'popRegion': list(regions.keys())[0],
+        'popActivityType': list(act_types.keys())[0]
     }
 
     return create_response(result, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS, None, 200)

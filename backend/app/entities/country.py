@@ -70,6 +70,7 @@ class Country(Entity, Base):
 
 class CountrySchema(EntitySchema):
     name = fields.String()
+    abbreviation = fields.String()
     last_updated_by = fields.Integer()
 
 
