@@ -617,11 +617,14 @@ def find_tour_by_term(term):
                                Activity.__name__, 403)
 
 
-@main.route('/hike/<act_id>', methods=['POST'])
+@main.route('/hike/<act_id>', methods=['GET'])
 @http_auth.login_required
 def add_hike(act_id):
     session = Session()
     user = http_auth.current_user
+    res = None
+
+    typ = rq.args.get('typ')
 
     if user not in session:
         user = session.query(User).get(user.id)
@@ -634,42 +637,19 @@ def add_hike(act_id):
         return create_response(None, responses.BAD_REQUEST_400, ResponseMessages.MAIN_NO_DATA,
                                HikeRelation.__name__, 400)
 
-    if user is not None and user.can(Permission.FOLLOW):
-        hike = user.add_hike(activity, session)
-        res = hike.serialize()
+    if user is not None and user.can(Permission.FOLLOW) and typ is not None:
+
+        if typ == 'add':
+            hike = user.add_hike(activity, session)
+            res = hike.serialize()
+        elif typ == 'check':
+            res = True if user.has_hiked(activity) is True else False
+        elif typ == 'rem':
+            user.delete_hike(activity, session)
+
         session.expunge_all()
         session.close()
         return create_response(res, responses.SUCCESS_201, ResponseMessages.CREATE_SUCCESS, HikeRelation.__name__, 201)
-
-    else:
-        session.expunge_all()
-        session.close()
-        return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.CREATE_NOT_AUTHORIZED,
-                               HikeRelation.__name__, 403)
-
-
-@main.route('/un_hike/<act_id>', methods=['POST'])
-@http_auth.login_required
-def rem_hike(act_id):
-    session = Session()
-    user = http_auth.current_user
-
-    if user not in session:
-        user = session.query(User).get(user.id)
-
-    activity = session.query(Activity).filter(Activity.id == act_id).first()
-
-    if activity is None:
-        session.expunge_all()
-        session.close()
-        return create_response(None, responses.BAD_REQUEST_400, ResponseMessages.MAIN_NO_DATA,
-                               HikeRelation.__name__, 400)
-
-    if user is not None and user.can(Permission.FOLLOW):
-        user.delete_hike(activity, session)
-        session.expunge_all()
-        session.close()
-        return create_response(None, responses.SUCCESS_201, ResponseMessages.CREATE_SUCCESS, HikeRelation.__name__, 201)
 
     else:
         session.expunge_all()
