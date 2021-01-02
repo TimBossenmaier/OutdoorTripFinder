@@ -35,7 +35,7 @@ export class TourDbService {
     if (search.country) {
       if (search.country === '-1') {
         return this.http.post<TourRaw[]>(
-          `${this.apiURL}/main/list/activity`,
+          `${this.apiURL}/main/find/activity`,
           {
               order_by: {
                 column: 'name',
@@ -95,7 +95,7 @@ export class TourDbService {
 
   getTourByID(id: string): Observable<Tour> {
     return this.http.get<TourRaw>(
-      `${this.apiURL}/main/activity/${id}`)
+      `${this.apiURL}/main/find/activity/${id}`)
       .pipe(
         retry(3),
         map(t => TourFactory.fromRaw(t)),
