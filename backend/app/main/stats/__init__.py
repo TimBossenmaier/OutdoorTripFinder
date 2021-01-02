@@ -17,7 +17,7 @@ from app.utils.responses import ResponseMessages, create_response
 stats = Blueprint('stats', __name__)
 
 
-@stats.route('stats/hikes/<act_id>', methods=['GET'])
+@stats.route('/hikes/<act_id>', methods=['GET'])
 @http_auth.login_required
 def get_no_hikes(act_id):
     res = count(user=http_auth.current_user, class_type=HikeRelation, **{'activity_id': act_id})
