@@ -3,7 +3,6 @@ import sqlalchemy as sql
 
 from flask import Blueprint, request as rq, send_file
 from sqlalchemy import or_
-from sqlalchemy.exc import IntegrityError
 
 from app.auth import http_auth
 from app.entities.entity import Session
@@ -11,7 +10,6 @@ from app.entities.hike_relations import HikeRelation
 from app.entities.user import Permission, User
 from app.entities.country import Country
 from app.entities.region import Region
-from app.entities.location_type import LocationType
 from app.entities.activity_type import ActivityType
 from app.entities.location_activity import LocationActivity
 from app.entities.activity import Activity, ActivityAttributes
@@ -182,10 +180,10 @@ def find_tour_by_term(term):
                                                                    str(ActivityAttributes.ID)
                                                                    ),
                                                              **{
-                                                                 'location': act.locations[0].location.name,
-                                                                 'region': act.locations[0].location.region.name,
-                                                                 'country_short':
-                                                                     act.locations[0].location.region.country.abbreviation
+                                                                 'location': act.get_location(0, output='name'),
+                                                                 'region': act.get_region(0, output='name'),
+                                                                 'country_short': act.get_country(0,
+                                                                                                  output='abbreviation')
                                                              }
                                                              ) for act in record_activities]
 
@@ -200,7 +198,6 @@ def find_tour_by_term(term):
 @main.route('/find_tour_by_area/', methods=['POST'])
 @http_auth.login_required
 def find_tour_by_area():
-
     keys = rq.get_json().get('keys')
     output = rq.get_json().get('output')
     order_by = rq.get_json().get('order_by')
@@ -209,19 +206,19 @@ def find_tour_by_area():
     order_func = getattr(sql, order_by.get('dir'))
 
     session = Session()
-    res = session.query(Activity)\
-        .join(LocationActivity)\
-        .join(Location)\
-        .join(Region)\
-        .filter_by(**keys)\
+    res = session.query(Activity) \
+        .join(LocationActivity) \
+        .join(Location) \
+        .join(Region) \
+        .filter_by(**keys) \
         .order_by(Activity.id.asc() if order_by is None else order_func(order_column)) \
         .all()
 
     activities = [r.convert_to_presentation_schema(only=output, **{
-                                                               'location': r.locations[0].location.name,
-                                                               'region': f'{r.locations[0].location.region.name} ',
+        'location': r.get_location(idx=0, output='name'),
+        'region': r.get_region(idx=0, output='name'),
 
-                                                           }) for r in res]
+    }) for r in res]
 
     session.expunge_all()
     session.close()
@@ -292,7 +289,7 @@ def find_comment_by_act(act_id):
                                                           str(CommentAttributes.BODY),
                                                           str(CommentAttributes.UPDATED_AT)),
                                                     **{
-                                                        'author': e.author.username
+                                                        'author': e.get_author()
                                                     }) for e in entities]
             session.expunge_all()
             session.close()
@@ -323,3 +320,12 @@ def get_file(act_id):
         return send_file(path_to_file, as_attachment=True)
     else:
         return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.FIND_NOT_AUTHORIZED, Activity, 403)
+
+
+@main.route('test')
+def test():
+    session = Session()
+
+    act = session.query(Activity).get(88)
+
+    return create_response(act.country_all(output='name'), None, None, None, 200)

@@ -57,6 +57,9 @@ class Comment(Entity, Base):
 
         return dump
 
+    def get_author(self, output='username'):
+        return getattr(self.author, output)
+
     def serialize(self):
         com = CommentSchema().dump(self)
 

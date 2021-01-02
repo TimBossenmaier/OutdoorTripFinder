@@ -5,6 +5,7 @@ from marshmallow import Schema, fields
 from datetime import datetime
 
 from app.entities.entity import Entity, EntitySchema, Base, Session
+from app.entities.user import User
 
 
 class Country(Entity, Base):
@@ -54,6 +55,9 @@ class Country(Entity, Base):
         country = CountrySchema().dump(self)
 
         return country
+
+    def get_last_editor(self, session):
+        return session.query(User).get(self.last_updated_by).username
 
     @staticmethod
     def get_insert_schema():

@@ -57,6 +57,9 @@ class Region(Entity, Base):
 
         return reg
 
+    def get_country(self, output='id'):
+        return getattr(self.country, output)
+
     @staticmethod
     def get_insert_schema():
         return RegionInsertSchema()

@@ -14,7 +14,7 @@ class HikeRelation(Entity, Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     activity_id = Column(Integer, ForeignKey('activities.id'), nullable=False)
     user = relationship('User', foreign_keys=user_id)
-    activity = relationship('Activity', foreign_keys=activity_id)
+    activity = relationship('Activity', foreign_keys=activity_id, backref='hikings')
 
     def __init__(self, user_id, activity_id):
         Entity.__init__(self)

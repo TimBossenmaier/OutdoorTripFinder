@@ -33,13 +33,10 @@ def by_id(user, id, classtype):
                                                                   str(ActivityAttributes.DESCRIPTION),
                                                                   str(ActivityAttributes.SOURCE)),
                                                             **{
-                                                                'activity_type': entity.activity_type.name,
-                                                                'locations': [loc.location.name
-                                                                              for loc in entity.locations],
-                                                                'location_types': [loc.location.location_type_id
-                                                                                   for loc in entity.locations],
-                                                                'countries': [loc.location.region.country.abbreviation
-                                                                              for loc in entity.locations]
+                                                                'activity_type': entity.get_activity_type(session, output='name'),
+                                                                'locations': entity.get_location_all(output='name'),
+                                                                'location_types': entity.get_location_type_all(),
+                                                                'countries': entity.get_country_all(output='abbreviation')
                                                             })
             else:
                 res = entity.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),

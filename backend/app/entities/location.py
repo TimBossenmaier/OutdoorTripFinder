@@ -66,6 +66,12 @@ class Location(Entity, Base):
 
         return loc
 
+    def get_country(self, output='id'):
+        return getattr(self.region.country, output)
+
+    def get_region(self, output='id'):
+        return getattr(self.region, output)
+
     @staticmethod
     def get_insert_schema():
         return LocationInsertSchema()

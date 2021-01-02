@@ -6,8 +6,10 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from enum import Enum
 
+from app.entities.activity_type import ActivityType
 from app.entities.comment import Comment
 from app.entities.entity import Entity, Base, EntitySchema
+from app.entities.user import User
 
 
 class Activity(Entity, Base):
@@ -20,9 +22,9 @@ class Activity(Entity, Base):
     save_path = Column(String, nullable=False)
     multi_day = Column(Boolean, nullable=False)
     last_updated_by = Column(Integer, ForeignKey('users.id'), nullable=False)
-    activity_type = relationship('ActivityType', foreign_keys=activity_type_id)
+    activity_type = relationship(ActivityType, foreign_keys=[activity_type_id])
     locations = relationship('LocationActivity', uselist=True, backref='activities')
-    comments = relationship(Comment, foreign_keys=[Comment.activity_id], lazy='dynamic')
+    comments = relationship(Comment, foreign_keys=[Comment.activity_id])
 
     def __init__(self, name, description, activity_type_id, source, save_path, multi_day, created_by):
         Entity.__init__(self)
@@ -69,6 +71,49 @@ class Activity(Entity, Base):
         act = ActivitySchema().dump(self)
 
         return act
+
+    def get_activity_type(self, session, output='id'):
+        res = session.query(ActivityType).get(self.activity_type_id)
+        return getattr(res, output)
+
+    def get_comment(self, idx=0, output='id'):
+        return getattr(self.comments[idx], output)
+
+    def get_comment_all(self, output='id'):
+        return [getattr(self.comments[idx], output) for idx in range(len(self.comments))]
+
+    def get_country(self, idx=0, output='id'):
+        return getattr(self.locations[idx].location.region.country, output)
+
+    def get_country_all(self, output='id'):
+        return [getattr(self.locations[idx].location.region.country, output) for idx in range(len(self.locations))]
+
+    def get_hiker(self, idx=0, output='id'):
+        return getattr(self.hikings[idx].user, output)
+
+    def get_hiker_all(self, output='id'):
+        return [getattr(self.hikings[idx].user, output) for idx in range(self.hikings)]
+
+    def get_last_editor(self, session):
+        return session.query(User).get(self.last_updated_by).username
+
+    def get_location(self, idx=0, output='id'):
+        return getattr(self.locations[idx].location, output)
+
+    def get_location_all(self, output='id'):
+        return [getattr(self.locations[idx].location, output) for idx in range(len(self.locations))]
+
+    def get_location_type(self, idx=0, output='id'):
+        return getattr(self.locations[idx].location.location_type, output)
+
+    def get_location_type_all(self, output='id'):
+        return [getattr(self.locations[idx].location.location_type, output) for idx in range(len(self.locations))]
+
+    def get_region(self, idx=0, output='id'):
+        return getattr(self.locations[idx].location.region, output)
+
+    def get_region_all(self, output='id'):
+        return [getattr(self.locations[idx].location.region, output) for idx in range(len(self.locations))]
 
     @staticmethod
     def get_insert_schema():
