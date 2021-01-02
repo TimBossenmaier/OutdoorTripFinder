@@ -617,6 +617,38 @@ def find_tour_by_term(term):
                                Activity.__name__, 403)
 
 
+@main.route('/find_tour_by_area/', methods=['POST'])
+@http_auth.login_required
+def find_tour_by_area():
+
+    keys = rq.get_json().get('keys')
+    output = rq.get_json().get('output')
+    order_by = rq.get_json().get('order_by')
+
+    order_column = getattr(Activity, order_by.get('column'))
+    order_func = getattr(sql, order_by.get('dir'))
+
+    session = Session()
+    res = session.query(Activity)\
+        .join(LocationActivity)\
+        .join(Location)\
+        .join(Region)\
+        .filter_by(**keys)\
+        .order_by(Activity.id.asc() if order_by is None else order_func(order_column)) \
+        .all()
+
+    activities = [r.convert_to_presentation_schema(only=output, **{
+                                                               'location': r.locations[0].location.name,
+                                                               'region': f'{r.locations[0].location.region.name} ',
+
+                                                           }) for r in res]
+
+    session.expunge_all()
+    session.close()
+
+    return create_response(activities, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS, Activity.__name__, 200)
+
+
 @main.route('/hike/<act_id>', methods=['GET'])
 @http_auth.login_required
 def add_hike(act_id):
