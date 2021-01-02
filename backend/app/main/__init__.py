@@ -31,6 +31,10 @@ def get_main_app():
     return main
 
 
+def sort_dict(items):
+    return {k: v for k, v in sorted(items, key=lambda item: item[1], reverse=True)}
+
+
 def check_integrity_error(ie, session, class_type):
     session.rollback()
     session.expunge_all()
@@ -743,70 +747,3 @@ def get_file(act_id):
         return send_file(path_to_file, as_attachment=True)
     else:
         return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.FIND_NOT_AUTHORIZED, Activity, 403)
-
-
-@main.route('stats/hikes/<act_id>', methods=['GET'])
-@http_auth.login_required
-def get_no_hikes(act_id):
-    res = count(user=http_auth.current_user, class_type=HikeRelation, **{'activity_id': act_id})
-
-    return res
-
-
-@main.route('/stats', methods=['GET'])
-@http_auth.login_required
-def stats_general():
-    no_tours = count(user=http_auth.current_user, class_type=Activity).get_json()
-    no_country = count(user=http_auth.current_user, class_type=Country).get_json()
-    no_regions = count(user=http_auth.current_user, class_type=Region).get_json()
-    no_locations = count(user=http_auth.current_user, class_type=Location).get_json()
-
-    session = Session()
-
-    result = session.query(LocationActivity).join(Location).all()
-    countries = {}
-    regions = {}
-    for r in result:
-
-        if r.locations.region.country.abbreviation in countries.keys():
-            countries[r.locations.region.country.abbreviation] += 1
-        else:
-            countries.update({r.locations.region.country.abbreviation: 1})
-
-        if r.locations.region.name in regions.keys():
-            regions[r.locations.region.name] += 1
-        else:
-            regions.update({r.locations.region.name: 1})
-    countries = {k: v for k, v in sorted(countries.items(), key=lambda item: item[1], reverse=True)}
-    regions = {k: v for k, v in sorted(regions.items(), key=lambda item: item[1], reverse=True)}
-
-    result = session.query(Activity).join(ActivityType).all()
-    act_types = {}
-    for r in result:
-        if r.activity_type.name in act_types.keys():
-            act_types[r.activity_type.name] += 1
-        else:
-            act_types.update({r.activity_type.name: 1})
-    act_types = {k: v for k, v in sorted(act_types.items(), key=lambda item: item[1], reverse=True)}
-
-    result = session.query(HikeRelation).join(Activity).all()
-    activities = {}
-    for r in result:
-        if r.activity.name in activities.keys():
-            activities[r.activity.name] += 1
-        else:
-            activities.update({r.activity.name: 1})
-    activities = {k: v for k, v in sorted(activities.items(), key=lambda item: item[1], reverse=True)}
-
-    result = {
-        'noTours': no_tours,
-        'noCountry': no_country,
-        'noRegion': no_regions,
-        'noLocation': no_locations,
-        'popCountry': list(countries.keys())[0],
-        'popRegion': list(regions.keys())[0],
-        'popActivityType': list(act_types.keys())[0],
-        'popActivity': list(activities.keys())[0]
-    }
-
-    return create_response(result, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS, None, 200)
