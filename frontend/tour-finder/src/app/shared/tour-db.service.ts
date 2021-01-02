@@ -43,7 +43,7 @@ export class TourDbService {
 
   getTourByTerm(searchTerm: string): Observable<Tour[]> {
     return this.http.get<TourRaw[]>(
-      `${this.apiURL}/main/find_tour_ty_term/${searchTerm}`)
+      `${this.apiURL}/main/find_tour_by_term/${searchTerm}`)
       .pipe(
         retry(3),
         map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t))),
