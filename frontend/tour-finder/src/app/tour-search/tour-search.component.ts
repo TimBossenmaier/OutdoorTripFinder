@@ -96,9 +96,27 @@ export class TourSearchComponent implements OnInit {
       {relativeTo: this.route, queryParams: {...search}});
   }
 
-  country() {
+  searchCountry() {
     const formValue = this.countryForm.value;
-    console.log(formValue.country, formValue.region);
+
+    if (formValue.region !== ''){
+      this.countryForm.reset();
+      this.router.navigate(['../', 'tours'],
+        {
+          relativeTo: this.route, queryParams:
+            {
+          region: formValue.region
+          }
+        }
+        );
+    } else {
+      this.countryForm.reset();
+      this.router.navigate(['../', 'tours'],
+        {
+          relativeTo: this.route, queryParams: { country: formValue.country}
+        }
+        );
+    }
   }
 
   searchLocation(coordinates: any) {

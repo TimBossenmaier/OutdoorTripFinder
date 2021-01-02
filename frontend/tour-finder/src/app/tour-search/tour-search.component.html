@@ -58,7 +58,7 @@
 </div>
 <div class="ui center aligned segment">
   <h3> Suche mittels Ländern und Regionen</h3>
-  <form class="ui form" [formGroup]="countryForm" (ngSubmit)="country()">
+  <form class="ui form" [formGroup]="countryForm" (ngSubmit)="searchCountry()">
     <div class="ui field">
       <div class="ui fluid search selection dropdown" id="countryDropdown">
         <input type="hidden" formControlName="country" >

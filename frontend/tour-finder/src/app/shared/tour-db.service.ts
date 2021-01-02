@@ -21,14 +21,76 @@ export class TourDbService {
   }
 
   getAllTours(search: any): Observable<Tour[]> {
-    return this.http.get<TourRaw[]>(
-      `${this.apiURL}/main/find_tour?lat=${search.lat}&long=${search.long}&dist=${search.dist}`)
-      .pipe(
+
+    if (search.lat) {
+      return this.http.get<TourRaw[]>(
+        `${this.apiURL}/main/find_tour?lat=${search.lat}&long=${search.long}&dist=${search.dist}`)
+        .pipe(
+          retry(3),
+          map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
+            ),
+          catchError(this.errorHandler)
+        );
+    }
+    if (search.country) {
+      if (search.country === '-1') {
+        return this.http.post<TourRaw[]>(
+          `${this.apiURL}/main/list/activity`,
+          {
+              order_by: {
+                column: 'name',
+                dir: 'asc'
+              },
+            output: ['id', 'name']
+          }
+        ).pipe(
+          retry(3),
+          map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
+          ),
+          catchError(this.errorHandler)
+        );
+      }
+      else {
+        return this.http.post<TourRaw[]>(
+          `${this.apiURL}/main/find_tour_by_area/`,
+          {
+            keys : {
+              country_id: search.country
+            },
+            order_by: {
+              column: 'name',
+              dir: 'asc'
+            },
+            output: ['id', 'name']
+          }
+        ).pipe(
+          retry(3),
+          map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
+          ),
+          catchError(this.errorHandler)
+        );
+      }
+    }
+    if (search.region) {
+      return this.http.post<TourRaw[]>(
+        `${this.apiURL}/main/find_tour_by_area/`,
+        {
+          keys: {
+            id: search.region
+          },
+          order_by: {
+            column: 'name',
+            dir: 'asc'
+          },
+          output: ['id', 'name']
+        }
+      ).pipe(
         retry(3),
         map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
-          ),
+        ),
         catchError(this.errorHandler)
       );
+    }
   }
 
   getTourByID(id: string): Observable<Tour> {

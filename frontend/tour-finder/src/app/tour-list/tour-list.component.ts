@@ -15,13 +15,21 @@ export class TourListComponent implements OnInit {
               private route: ActivatedRoute) { }
 
   ngOnInit(): void {
-    const params = this.route.snapshot.queryParamMap;
-    const search = {
-      long: params.get('long').toString(),
-      lat: params.get('lat').toString(),
-      dist: params.get('dist').toString()
-    };
-    this.tdb.getAllTours(search).subscribe(res => this.tours = res);
+    const params = this.route.snapshot.queryParams;
+    if (params.long) {
+      const search = {
+        long: params.long.toString(),
+        lat: params.lat.toString(),
+        dist: params.dist.toString()
+      };
+      this.tdb.getAllTours(search).subscribe(res => this.tours = res);
+    } else if (params.country) {
+      this.tdb.getAllTours({country: params.country}).subscribe(res => this.tours = res);
+    } else if (params.region) {
+      this.tdb.getAllTours({region: params.region}).subscribe(res => this.tours = res);
+    } else {
+      this.tdb.getAllTours({country: '-1'}).subscribe(res => this.tours = res);
+    }
   }
 
 }
