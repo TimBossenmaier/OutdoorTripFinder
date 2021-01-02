@@ -21,6 +21,15 @@ CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
+
+
 @app.shell_context_processor
 def make_shell_context():
     return dict(db=db, User=User, Role=Role, Country=Country, Region=Region, LocationType=LocationType,
@@ -31,7 +40,6 @@ def make_shell_context():
 @app.cli.command()
 @click.argument('test_names', nargs=-1)
 def test(test_names):
-
     if test_names:
         tests = unittest.TestLoader().loadTestsFromNames(test_names)
     else:

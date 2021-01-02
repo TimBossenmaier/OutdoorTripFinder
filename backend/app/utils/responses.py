@@ -62,9 +62,6 @@ def create_response(data, http_resp, msg, classname, http_code):
     resp.headers['http_response'] = http_resp
     resp.headers['msg'] = msg
     resp.headers['class'] = classname
-    resp.headers.add("Access-Control-Allow-Origin", "*")
-    resp.headers.add("Access-Control-Allow-Headers", "*")
-    resp.headers.add("Access-Control-Allow-Methods", "*")
 
     return resp
 
