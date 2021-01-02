@@ -18,7 +18,7 @@ const routes: Routes = [
   },
   {
     path: 'tours',
-    component: TourListComponent,
+    component: TourListComponent
   },
   {
     path: 'tours/:id',
