@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from app.main import main as main_blueprint
 from app.auth import auth as auth_blueprint
+from app.main.stats import stats as stats_blueprint
 from config import config
 
 bootstrap = Bootstrap()
@@ -26,6 +27,7 @@ def create_app(config_name):
     db.init_app(app)
 
     app.register_blueprint(main_blueprint, url_prefix='/main')
+    app.register_blueprint(stats_blueprint, url_prefix='/main/stats')
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
     CORS(app)
     app.config['CORS_HEADERS'] = 'Content-Type'
