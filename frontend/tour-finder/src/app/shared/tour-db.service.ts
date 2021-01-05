@@ -120,8 +120,18 @@ export class TourDbService {
   }
 
   getCommentByAct(actID: string): Observable<Comment[]> {
+
+    const jsonEncoded = btoa(JSON.stringify({	keys: {
+        activity_id: actID
+      },
+      order_by: {
+        column: 'updated_at',
+        dir: 'asc'
+      },
+      output: ['id', 'body', 'updated_at']
+    }));
     return this.http.get<Comment[]>(
-      `${this.apiURL}/main/find/comment/${actID}`)
+      `${this.apiURL}/main/list/comment/${jsonEncoded}`)
       .pipe(
         retry(3),
         catchError(this.errorHandler)
