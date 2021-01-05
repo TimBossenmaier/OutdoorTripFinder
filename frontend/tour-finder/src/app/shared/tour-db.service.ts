@@ -34,59 +34,65 @@ export class TourDbService {
     }
     if (search.country) {
       if (search.country === '-1') {
-        return this.http.post<TourRaw[]>(
-          `${this.apiURL}/main/find/activity`,
-          {
-              order_by: {
-                column: 'name',
-                dir: 'asc'
-              },
-            output: ['id', 'name']
-          }
-        ).pipe(
-          retry(3),
-          map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
+
+        const jsonEncoded = btoa(JSON.stringify({
+          order_by: {
+            column: 'name',
+            dir: 'asc'
+          },
+          output: ['id', 'name']
+        }));
+
+        return this.http.get<TourRaw[]>(
+          `${this.apiURL}/main/list/activity/${jsonEncoded}`)
+          .pipe(
+            retry(3),
+            map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
           ),
           catchError(this.errorHandler)
         );
       }
       else {
-        return this.http.post<TourRaw[]>(
-          `${this.apiURL}/main/find_tour_by_area/`,
-          {
-            keys : {
-              country_id: search.country
-            },
-            order_by: {
-              column: 'name',
-              dir: 'asc'
-            },
-            output: ['id', 'name']
-          }
-        ).pipe(
-          retry(3),
-          map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
-          ),
-          catchError(this.errorHandler)
-        );
-      }
-    }
-    if (search.region) {
-      return this.http.post<TourRaw[]>(
-        `${this.apiURL}/main/find_tour_by_area/`,
-        {
-          keys: {
-            id: search.region
+
+        const jsonEncoded = btoa(JSON.stringify( {
+          keys : {
+            country_id: search.country
           },
           order_by: {
             column: 'name',
             dir: 'asc'
           },
           output: ['id', 'name']
-        }
-      ).pipe(
-        retry(3),
-        map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
+        }));
+
+        return this.http.get<TourRaw[]>(
+          `${this.apiURL}/main/find_tour_by_area/${jsonEncoded}`)
+          .pipe(
+            retry(3),
+            map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
+          ),
+          catchError(this.errorHandler)
+        );
+      }
+    }
+    if (search.region) {
+
+      const jsonEncoded = btoa(JSON.stringify({
+        keys: {
+          id: search.region
+        },
+        order_by: {
+          column: 'name',
+          dir: 'asc'
+        },
+        output: ['id', 'name']
+      }));
+
+      return this.http.get<TourRaw[]>(
+        `${this.apiURL}/main/find_tour_by_area/${jsonEncoded}`)
+        .pipe(
+          retry(3),
+          map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
         ),
         catchError(this.errorHandler)
       );
@@ -152,16 +158,17 @@ export class TourDbService {
   }
 
   getActivityTypes(): Observable<ActivityType[]> {
-    return this.http.post<ActivityType[]>(
-      `${this.apiURL}/main/list/activity_type`,
-      {
-        order_by: {
-          column: 'name',
-          dir: 'asc'
-        },
-        output: ['name', 'id']
-      }
-      )
+
+    const jsonEncoded = btoa(JSON.stringify({
+      order_by: {
+        column: 'name',
+        dir: 'asc'
+      },
+      output: ['name', 'id']
+    }));
+
+    return this.http.get<ActivityType[]>(
+      `${this.apiURL}/main/list/activity_type/${jsonEncoded}`)
       .pipe(
         retry(3),
         catchError(this.errorHandler)
@@ -169,16 +176,17 @@ export class TourDbService {
   }
 
   getLocations(): Observable<Location[]> {
-    return  this.http.post<Location[]>(
-      `${this.apiURL}/main/list/location`,
-      {
-        order_by: {
-          column: 'name',
-          dir: 'asc'
-        },
-        output: ['name', 'id']
-      }
-    )
+
+    const jsonEncoded = btoa(JSON.stringify({
+      order_by: {
+        column: 'name',
+        dir: 'asc'
+      },
+      output: ['name', 'id']
+    }));
+
+    return  this.http.get<Location[]>(
+      `${this.apiURL}/main/list/location/${jsonEncoded}`)
       .pipe(
         retry(3),
         catchError(this.errorHandler)
@@ -186,15 +194,16 @@ export class TourDbService {
   }
 
   getCountries(): Observable<any[]> {
-    return this.http.post(
-      `${this.apiURL}/main/list/country`,
-      {
-        order_by: {
-          column: 'name',
-          dir: 'asc'
-        },
-        output: ['name', 'id', 'abbreviation']
-      })
+    const jsonEncoded = btoa(JSON.stringify({
+      order_by: {
+        column: 'name',
+        dir: 'asc'
+      },
+      output: ['name', 'id', 'abbreviation']
+    }));
+
+    return this.http.get(
+      `${this.apiURL}/main/list/country/${jsonEncoded}`)
       .pipe(
         retry(3),
         catchError(this.errorHandler)
@@ -202,19 +211,20 @@ export class TourDbService {
   }
 
   getRegionByCountry(countryID: string): Observable<any[]> {
-    return this.http.post(
-      `${this.apiURL}/main/list/region`,
-      {
-        keys: {
-          country_id: countryID
-        },
-        order_by: {
-          column: 'name',
-          dir: 'asc'
-        },
-        output: ['name', 'id']
-      }
-    )
+
+    const jsonEncoded = btoa(JSON.stringify({
+      keys: {
+        country_id: countryID
+      },
+      order_by: {
+        column: 'name',
+        dir: 'asc'
+      },
+      output: ['name', 'id']
+    }));
+
+    return this.http.get(
+      `${this.apiURL}/main/list/region/${jsonEncoded}`)
       .pipe(
         retry(3),
         catchError(this.errorHandler)
