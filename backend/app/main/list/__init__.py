@@ -68,10 +68,18 @@ def list_all(class_type, data_encoded):
 
     schema = class_type.get_schema(many=True, only=output)
 
+    if class_type == Comment:
+        authors = [r.get_author() for r in res]
+
     session.expunge_all()
     session.close()
 
-    return create_response(schema.dump(res), responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS,
+    res = schema.dump(res)
+
+    if class_type == Comment:
+        [r.update({'author': authors[idx]}) for idx, r in enumerate(res)]
+
+    return create_response(res, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS,
                            class_type.__name__, 200)
 
 
