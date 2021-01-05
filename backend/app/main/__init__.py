@@ -273,39 +273,6 @@ def add_hike(act_id):
                                HikeRelation.__name__, 403)
 
 
-@main.route('/find/comment/<act_id>')
-@http_auth.login_required
-def find_comment_by_act(act_id):
-    session = Session()
-    res = None
-
-    user = http_auth.current_user
-
-    if user not in session:
-        user = session.query(User).get(user.id)
-
-    if user is not None and user.can(Permission.READ):
-        entities = session.query(Comment) \
-            .filter(Comment.activity_id == act_id) \
-            .filter(Comment.author_id == User.id) \
-            .all()
-
-        if entities is not None:
-            res = [e.convert_to_presentation_schema(only=(str(CommentAttributes.ID),
-                                                          str(CommentAttributes.BODY),
-                                                          str(CommentAttributes.UPDATED_AT)),
-                                                    **{
-                                                        'author': e.get_author()
-                                                    }) for e in entities]
-            session.expunge_all()
-            session.close()
-            return create_response(res, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS, Comment, 200)
-    else:
-        session.expunge_all()
-        session.close()
-        return create_response(res, responses.INVALID_INPUT_422, ResponseMessages.FIND_MISSING_PARAMETER, Comment, 422)
-
-
 @main.route('/file/<act_id>', methods=['GET'])
 @http_auth.login_required
 def get_file(act_id):
