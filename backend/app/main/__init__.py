@@ -1,3 +1,5 @@
+import ast
+import base64
 import os
 import sqlalchemy as sql
 
@@ -195,12 +197,16 @@ def find_tour_by_term(term):
                                Activity.__name__, 403)
 
 
-@main.route('/find_tour_by_area/', methods=['POST'])
+@main.route('/find_tour_by_area/<data_encoded>', methods=['GET'])
 @http_auth.login_required
-def find_tour_by_area():
-    keys = rq.get_json().get('keys')
-    output = rq.get_json().get('output')
-    order_by = rq.get_json().get('order_by')
+def find_tour_by_area(data_encoded):
+
+    data_string = base64.b64decode(data_encoded).decode()
+    data = ast.literal_eval(data_string)
+
+    keys = data.get('keys')
+    output = data.get('output')
+    order_by = data.get('order_by')
 
     order_column = getattr(Activity, order_by.get('column'))
     order_func = getattr(sql, order_by.get('dir'))

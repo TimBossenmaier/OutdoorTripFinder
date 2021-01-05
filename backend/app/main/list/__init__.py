@@ -1,4 +1,6 @@
 import sqlalchemy as sql
+import base64
+import ast
 
 from flask import Blueprint, request as rq
 
@@ -19,14 +21,17 @@ from app.utils.responses import create_response, ResponseMessages
 lst = Blueprint('list', __name__)
 
 
-def list_all(class_type, rq):
+def list_all(class_type, data_encoded):
     session = Session()
     res = None
 
-    keys = rq.get_json().get('keys')
-    term = rq.get_json().get('term')
-    output = rq.get_json().get('output')
-    order_by = rq.get_json().get('order_by')
+    data_string = base64.b64decode(data_encoded).decode()
+    data = ast.literal_eval(data_string)
+
+    keys = data.get('keys')
+    term = data.get('term')
+    output = data.get('output')
+    order_by = data.get('order_by')
 
     order_column = getattr(class_type, order_by.get('column'))
     order_func = getattr(sql, order_by.get('dir'))
@@ -70,82 +75,82 @@ def list_all(class_type, rq):
                            class_type.__name__, 200)
 
 
-@lst.route('/country', methods=['POST'])
+@lst.route('/country/<data>', methods=['GET'])
 @http_auth.login_required
-def list_country():
+def list_country(data):
 
-    res = list_all(Country, rq)
+    res = list_all(Country, data_encoded=data)
 
     return res
 
 
-@lst.route('/region', methods=['POST'])
+@lst.route('/region/<data>', methods=['GET'])
 @http_auth.login_required
-def list_region():
+def list_region(data):
 
-    res = list_all(Region, rq)
+    res = list_all(Region, data_encoded=data)
 
     return res
 
 
-@lst.route('/location_type', methods=['POST'])
+@lst.route('/location_type/<data>', methods=['GET'])
 @http_auth.login_required
-def list_location_type():
+def list_location_type(data):
 
-    res = list_all(LocationType, rq)
+    res = list_all(LocationType, data_encoded=data)
 
     return res
 
 
-@lst.route('/activity_type', methods=['POST'])
+@lst.route('/activity_type/<data>', methods=['GET'])
 @http_auth.login_required
-def list_activity_type():
+def list_activity_type(data):
 
-    res = list_all(ActivityType, rq)
+    res = list_all(ActivityType, data_encoded=data)
 
     return res
 
 
-@lst.route('/location_activity', methods=['POST'])
+@lst.route('/location_activity/<data>', methods=['GET'])
 @http_auth.login_required
-def list_location_activity():
+def list_location_activity(data):
 
-    res = list_all(LocationActivity, rq)
+    res = list_all(LocationActivity, data_encoded=data)
 
     return res
 
 
-@lst.route('/activity', methods=['POST'])
+@lst.route('/activity/<data>', methods=['GET'])
 @http_auth.login_required
-def list_activity():
+def list_activity(data):
 
-    res = list_all(Activity, rq)
+    res = list_all(Activity, data_encoded=data)
 
     return res
 
 
-@lst.route('/location', methods=['POST'])
+@lst.route('/location/<data>', methods=['GET'])
 @http_auth.login_required
-def list_location():
+def list_location(data):
 
-    res = list_all(Location, rq)
+    res = list_all(Location, data_encoded=data)
 
     return res
 
 
-@lst.route('/comment', methods=['POST'])
+@lst.route('/comment/<data>', methods=['GET'])
 @http_auth.login_required
-def list_comment():
+def list_comment(data):
 
-    res = list_all(Comment, rq)
+    res = list_all(Comment, data_encoded=data)
 
     return res
 
 
-@lst.route('/list/hikerelation', methods=['POST'])
+@lst.route('/hikerelation/<data>', methods=['GET'])
 @http_auth.login_required
-def list_hikerelation():
+def list_hikerelation(data):
 
-    res = list_all(HikeRelation, rq)
+    res = list_all(HikeRelation, data_encoded=data)
 
     return res
