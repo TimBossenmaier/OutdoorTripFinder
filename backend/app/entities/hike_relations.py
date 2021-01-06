@@ -36,20 +36,6 @@ class HikeRelation(Entity, Base):
         schema = HikeRelationSchema()
         return schema.dump(self)
 
-    def convert_to_presentation_schema(self, only=(), **kwargs):
-        schema = HikeRelationPresentationSchema(only=only if len(only) > 0 else None)
-        dump = schema.dump(self)
-        for key, value in kwargs.items():
-            dump.update({key: value})
-
-        return dump
-
-    def serialize(self):
-
-        hr = HikeRelationSchema().dump(self)
-
-        return hr
-
     @staticmethod
     def get_insert_schema():
         return HikeRelationSchema()
@@ -66,10 +52,6 @@ class HikeRelation(Entity, Base):
 class HikeRelationSchema(EntitySchema):
     user_id = fields.Integer()
     activity_id = fields.Integer()
-
-
-class HikeRelationPresentationSchema(HikeRelationSchema):
-    id = fields.Integer()
 
 
 class HikeRelationAttributes(Enum):

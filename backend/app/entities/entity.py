@@ -43,8 +43,22 @@ class Entity:
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
 
-    def serialize(self):
-        pass
+    def serialize(self, session=None, only=('id'), enrich={}, **kwargs):
+        act = self.__class__.get_schema(many=False, only=only).dump(self)
+
+        for k, v in enrich.items():
+            method = getattr(self.__class__, k)
+
+            if method == self.__class__.get_last_editor:
+                result, label = method(self, session=session)
+            else:
+                result, label = method(self, output=v)
+            act.update({label: result})
+
+        for key, value in kwargs.items():
+            act.update({key: value})
+
+        return act
 
 
 class EntitySchema(Schema):

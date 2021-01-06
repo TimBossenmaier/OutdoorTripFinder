@@ -41,19 +41,6 @@ class ActivityType(Entity, Base):
         schema = ActivityTypeInsertSchema()
         return schema.dump(self)
 
-    def convert_to_presentation_schema(self, only=(), **kwargs):
-        schema = ActivityTypePresentationSchema(only=only if len(only) > 0 else None)
-        dump = schema.dump(self)
-        for key, value in kwargs.items():
-            dump.update({key: value})
-
-        return dump
-
-    def serialize(self):
-        at = ActivityTypeSchema().dump(self)
-
-        return at
-
     @staticmethod
     def get_insert_schema():
         return ActivityTypeInsertSchema()
@@ -75,10 +62,6 @@ class ActivityTypeSchema(EntitySchema):
 class ActivityTypeInsertSchema(Schema):
     name = fields.String()
     created_by = fields.Integer()
-
-
-class ActivityTypePresentationSchema(ActivityTypeSchema):
-    id = fields.Integer()
 
 
 class ActivityTypeAttributes(Enum):

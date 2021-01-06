@@ -59,61 +59,47 @@ class Activity(Entity, Base):
         dump = schema.dump(self)
         return dump
 
-    def convert_to_presentation_schema(self, only=(), **kwargs):
-        schema = ActivityPresentationSchema(only=only if len(only) > 0 else None)
-        dump = schema.dump(self)
-        for key, value in kwargs.items():
-            dump.update({key: value})
-
-        return dump
-
-    def serialize(self):
-        act = ActivitySchema().dump(self)
-
-        return act
-
-    def get_activity_type(self, session, output='id'):
-        res = session.query(ActivityType).get(self.activity_type_id)
-        return getattr(res, output)
+    def get_activity_type(self, output='id'):
+        return getattr(self.activity_type, output), 'activity_type'
 
     def get_comment(self, idx=0, output='id'):
-        return getattr(self.comments[idx], output)
+        return getattr(self.comments[idx], output), 'comment'
 
     def get_comment_all(self, output='id'):
-        return [getattr(self.comments[idx], output) for idx in range(len(self.comments))]
+        return [getattr(self.comments[idx], output) for idx in range(len(self.comments))], 'comments'
 
     def get_country(self, idx=0, output='id'):
-        return getattr(self.locations[idx].location.region.country, output)
+        return getattr(self.locations[idx].location.region.country, output), 'country'
 
     def get_country_all(self, output='id'):
-        return [getattr(self.locations[idx].location.region.country, output) for idx in range(len(self.locations))]
+        return [getattr(self.locations[idx].location.region.country, output) for idx in range(len(self.locations))], 'countries'
 
     def get_hiker(self, idx=0, output='id'):
-        return getattr(self.hikings[idx].user, output)
+        return getattr(self.hikings[idx].user, output), 'hiker'
 
     def get_hiker_all(self, output='id'):
-        return [getattr(self.hikings[idx].user, output) for idx in range(self.hikings)]
+        return [getattr(self.hikings[idx].user, output) for idx in range(self.hikings)], 'hikers'
 
     def get_last_editor(self, session):
-        return session.query(User).get(self.last_updated_by).username
+        return session.query(User).get(self.last_updated_by).username, 'editor'
 
     def get_location(self, idx=0, output='id'):
-        return getattr(self.locations[idx].location, output)
+        return getattr(self.locations[idx].location, output), 'location'
 
     def get_location_all(self, output='id'):
-        return [getattr(self.locations[idx].location, output) for idx in range(len(self.locations))]
+        return [getattr(self.locations[idx].location, output) for idx in range(len(self.locations))], 'locations'
 
     def get_location_type(self, idx=0, output='id'):
-        return getattr(self.locations[idx].location.location_type, output)
+        return getattr(self.locations[idx].location.location_type, output), 'location_type'
 
     def get_location_type_all(self, output='id'):
-        return [getattr(self.locations[idx].location.location_type, output) for idx in range(len(self.locations))]
+        return [getattr(self.locations[idx].location.location_type, output) for idx in range(len(self.locations))], 'location_types'
 
     def get_region(self, idx=0, output='id'):
-        return getattr(self.locations[idx].location.region, output)
+        return getattr(self.locations[idx].location.region, output), 'region'
 
     def get_region_all(self, output='id'):
-        return [getattr(self.locations[idx].location.region, output) for idx in range(len(self.locations))]
+        return [getattr(self.locations[idx].location.region, output) for idx in range(len(self.locations))], 'regions'
 
     @staticmethod
     def get_insert_schema():
@@ -146,14 +132,6 @@ class ActivityInsertSchema(Schema):
     save_path = fields.String()
     multi_day = fields.Boolean()
     created_by = fields.Integer()
-
-
-class ActivityPresentationSchema(ActivitySchema):
-    id = fields.Integer()
-    activity_type = fields.String()
-    location = fields.String()
-    region = fields.String()
-    country = fields.String()
 
 
 class ActivityAttributes(Enum):

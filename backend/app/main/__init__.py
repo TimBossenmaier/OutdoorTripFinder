@@ -66,15 +66,18 @@ def count(user, class_type, **kwargs):
         return create_response(res, responses.UNAUTHORIZED_403, ResponseMessages.FIND_NOT_AUTHORIZED, class_type, 403)
 
 
-@main.route('/find_tour', methods=['GET'])
+@main.route('/find_tour/<data_encoded>', methods=['GET'])
 @http_auth.login_required
-def find_tour():
+def find_tour(data_encoded):
     session = Session()
     user = http_auth.current_user
 
-    curr_lat = round(float(rq.args.get('lat')), 3)
-    curr_long = round(float(rq.args.get('long')), 3)
-    max_dist = int(rq.args.get('dist'))
+    data_string = base64.b64decode(data_encoded).decode()
+    data = ast.literal_eval(data_string)
+
+    curr_lat = round(float(data.get('lat')), 3)
+    curr_long = round(float(data.get('long')), 3)
+    max_dist = int(data.get('dist'))
 
     if user not in session:
         user = session.query(User).get(user.id)
@@ -118,21 +121,19 @@ def find_tour():
                 .filter(Location.id.in_(locations.keys())) \
                 .all()
 
-            activities = [a.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
-                                                                 str(ActivityAttributes.ID)
-                                                                 ),
-                                                           **{
-                                                               'location': [loc.location.name
-                                                                            for loc in a.locations
-                                                                            if locations.get(loc.location_id)][0],
-                                                               'region': [loc.location.region.name
-                                                                          for loc in a.locations
-                                                                          if locations.get(loc.location_id)][0],
-                                                               'distance': [locations.get(loc.location_id)['dist']
-                                                                            for loc in a.locations
-                                                                            if locations.get(loc.location_id)][0]
-                                                           }
-                                                           ) for a in record_activities]
+            activities = [a.serialize(only=data.get('output'), session=session,
+                                      **{
+                                          'location': [loc.location.name
+                                                       for loc in a.locations
+                                                       if locations.get(loc.location_id)][0],
+                                          'region': [loc.location.region.name
+                                                     for loc in a.locations
+                                                     if locations.get(loc.location_id)][0],
+                                          'distance': [locations.get(loc.location_id)['dist']
+                                                       for loc in a.locations
+                                                       if locations.get(loc.location_id)][0]
+                                      }
+                                      ) for a in record_activities]
 
             activities = sorted(activities, key=lambda k: k['distance'])
 
@@ -158,11 +159,16 @@ def find_tour():
                                Activity.__name__, 403)
 
 
-@main.route('/find_tour_by_term/<term>', methods=['GET'])
+@main.route('/find_tour_by_term/<data_encoded>', methods=['GET'])
 @http_auth.login_required
-def find_tour_by_term(term):
+def find_tour_by_term(data_encoded):
     session = Session()
     user = http_auth.current_user
+
+    data_string = base64.b64decode(data_encoded).decode()
+    data = ast.literal_eval(data_string)
+
+    term = data.get("term")
 
     if user not in session:
         user = session.query(User).get(user.id)
@@ -178,16 +184,8 @@ def find_tour_by_term(term):
                                    Activity.__name__, 400)
         else:
 
-            activities = [act.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
-                                                                   str(ActivityAttributes.ID)
-                                                                   ),
-                                                             **{
-                                                                 'location': act.get_location(0, output='name'),
-                                                                 'region': act.get_region(0, output='name'),
-                                                                 'country_short': act.get_country(0,
-                                                                                                  output='abbreviation')
-                                                             }
-                                                             ) for act in record_activities]
+            activities = [act.serialize(session=session, only=data.get('output'), enrich=data.get('enrich'))
+                          for act in record_activities]
 
             return create_response(activities, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS,
                                    Activity.__name__, 200)
@@ -200,7 +198,6 @@ def find_tour_by_term(term):
 @main.route('/find_tour_by_area/<data_encoded>', methods=['GET'])
 @http_auth.login_required
 def find_tour_by_area(data_encoded):
-
     data_string = base64.b64decode(data_encoded).decode()
     data = ast.literal_eval(data_string)
 
@@ -220,11 +217,7 @@ def find_tour_by_area(data_encoded):
         .order_by(Activity.id.asc() if order_by is None else order_func(order_column)) \
         .all()
 
-    activities = [r.convert_to_presentation_schema(only=output, **{
-        'location': r.get_location(idx=0, output='name'),
-        'region': r.get_region(idx=0, output='name'),
-
-    }) for r in res]
+    activities = [r.serialize(session=session, only=output, enrich=data.get('enrich')) for r in res]
 
     session.expunge_all()
     session.close()

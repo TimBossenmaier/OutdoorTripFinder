@@ -36,13 +36,7 @@ def by_id(user, id, classtype, data_encoded):
 
         if entity is not None:
             if classtype == Activity:
-                res = entity.convert_to_presentation_schema(only=output,
-                                                            **{
-                                                                'activity_type': entity.get_activity_type(session, output='name'),
-                                                                'locations': entity.get_location_all(output='name'),
-                                                                'location_types': entity.get_location_type_all(),
-                                                                'countries': entity.get_country_all(output='abbreviation')
-                                                            })
+                res = entity.serialize(session, enrich=data.get('enrich'), only=data.get('output'))
             else:
                 res = entity.convert_to_presentation_schema(only=output)
             session.expunge_all()

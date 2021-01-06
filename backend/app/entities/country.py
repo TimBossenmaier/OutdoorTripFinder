@@ -43,19 +43,6 @@ class Country(Entity, Base):
         schema = CountryInsertSchema()
         return schema.dump(self)
 
-    def convert_to_presentation_schema(self, only=(), **kwargs):
-        schema = CountryPresentationSchema(only=only if len(only) > 0 else None)
-        dump = schema.dump(self)
-        for key, value in kwargs.items():
-            dump.update({key: value})
-
-        return dump
-
-    def serialize(self):
-        country = CountrySchema().dump(self)
-
-        return country
-
     def get_last_editor(self, session):
         return session.query(User).get(self.last_updated_by).username
 
@@ -82,10 +69,6 @@ class CountryInsertSchema(Schema):
     name = fields.String()
     abbreviation = fields.String()
     created_by = fields.Integer()
-
-
-class CountryPresentationSchema(CountrySchema):
-    id = fields.Integer()
 
 
 class CountryAttributes(Enum):

@@ -148,12 +148,6 @@ class User(Entity, Base):
     def is_admin(self):
         return self.can(Permission.ADMIN)
 
-    def serialize(self):
-
-        user = UserSchema().dump(self)
-
-        return user
-
     def generate_auth_token(self, expiration, session):
         self.session_id = rand_alphanumeric()
         self.update(session, self.username)

@@ -41,19 +41,6 @@ class LocationType(Entity, Base):
         schema = LocationTypeInsertSchema()
         return schema.dump(self)
 
-    def convert_to_presentation_schema(self, only=(), **kwargs):
-        schema = LocationTypePresentationSchema(only=only if len(only) > 0 else None)
-        dump = schema.dump(self)
-        for key, value in kwargs.items():
-            dump.update({key: value})
-
-        return dump
-
-    def serialize(self):
-        lt = LocationTypeSchema().dump(self)
-
-        return lt
-
     @staticmethod
     def get_insert_schema():
         return LocationTypeInsertSchema()
@@ -76,10 +63,6 @@ class LocationTypeSchema(EntitySchema):
 class LocationTypeInsertSchema(Schema):
     name = fields.String()
     created_by = fields.Integer()
-
-
-class LocationTypePresentationSchema(LocationTypeSchema):
-    id = fields.Integer()
 
 
 class LocationTypeAttributes(Enum):

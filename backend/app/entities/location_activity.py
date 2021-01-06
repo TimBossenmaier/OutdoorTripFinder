@@ -46,19 +46,6 @@ class LocationActivity(Entity, Base):
         schema = LocationActivityInsertSchema()
         return schema.dump(self)
 
-    def convert_to_presentation_schema(self, only=(), **kwargs):
-        schema = LocationActivityPresentationSchema(only=only if len(only) > 0 else None)
-        dump = schema.dump(self)
-        for key, value in kwargs.items():
-            dump.update({key: value})
-
-        return dump
-
-    def serialize(self):
-        la = LocationActivitySchema().dump(self)
-
-        return la
-
     @staticmethod
     def get_insert_schema():
         return LocationActivityInsertSchema()
@@ -82,10 +69,6 @@ class LocationActivityInsertSchema(Schema):
     activity_id = fields.Integer()
     location_id = fields.Integer()
     created_by = fields.Integer()
-
-
-class LocationActivityPresentationSchema(LocationActivitySchema):
-    id = fields.Integer()
 
 
 class LocationActivityAttributes(Enum):

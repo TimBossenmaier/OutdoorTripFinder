@@ -44,19 +44,6 @@ class Region(Entity, Base):
         schema = RegionInsertSchema()
         return schema.dump(self)
 
-    def convert_to_presentation_schema(self, only=(), **kwargs):
-        schema = RegionPresentationSchema(only=only if len(only) > 0 else None)
-        dump = schema.dump(self)
-        for key, value in kwargs.items():
-            dump.update({key: value})
-
-        return dump
-
-    def serialize(self):
-        reg = RegionSchema().dump(self)
-
-        return reg
-
     def get_country(self, output='id'):
         return getattr(self.country, output)
 
@@ -83,10 +70,6 @@ class RegionInsertSchema(Schema):
     name = fields.String()
     country_id = fields.Integer()
     created_by = fields.Integer()
-
-
-class RegionPresentationSchema(RegionSchema):
-    id = fields.Integer()
 
 
 class RegionAttributes(Enum):
