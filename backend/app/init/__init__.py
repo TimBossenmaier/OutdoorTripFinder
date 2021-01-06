@@ -11,12 +11,12 @@ from app.auth import http_auth
 from app.entities.activity import Activity
 from app.entities.activity_type import ActivityType
 from app.entities.country import Country
-from app.entities.entity import Session
+from app.entities.entity import Session, Base, engine
 from app.entities.location import Location
 from app.entities.location_activity import LocationActivity
 from app.entities.location_type import LocationType
 from app.entities.region import Region
-from app.entities.role import Permission
+from app.entities.role import Permission, Role
 from app.entities.user import User
 from app.utils import responses
 from app.utils.helpers import intersection
@@ -212,9 +212,28 @@ def import_tours(data_encoded):
             session.add_all(mappings)
             session.commit()
 
+            session.expunge_all()
+            session.close()
+
             return create_response(None, responses.SUCCESS_201, ResponseMessages.INIT_SUCCESS, None, 201)
         else:
+            session.expunge_all()
+            session.close()
             return create_response(errors, responses.BAD_REQUEST_400, ResponseMessages.INIT_ERROR_DURING_CREATE, None,
                                    400)
     else:
         return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.INIT_NOT_AUTHORIZED, None, 403)
+
+
+@init.route('/db', methods=['GET'])
+def init_db():
+
+    session = Session()
+
+    Base.metadata.create_all(engine)
+    Role.insert_roles(session)
+
+    session.expunge_all()
+    session.close()
+
+    return create_response(None, responses.SUCCESS_201, ResponseMessages.INIT_SUCCESS, None, 201)
