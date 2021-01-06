@@ -2,7 +2,7 @@ import sqlalchemy as sql
 import base64
 import ast
 
-from flask import Blueprint, request as rq
+from flask import Blueprint
 
 from app.auth import http_auth
 from app.entities.activity import Activity

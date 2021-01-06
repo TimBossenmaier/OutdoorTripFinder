@@ -47,3 +47,8 @@ def rand_alphanumeric(ln=16):
 
 def sort_by_dist(dic):
     return dic['dist']
+
+
+def intersection(ids, keys_used):
+    lst3 = [v for v in keys_used if v not in ids]
+    return lst3

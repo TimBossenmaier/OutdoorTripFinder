@@ -12,6 +12,7 @@ from app.main.create import crt as create_blueprint
 from app.main.update import updt as update_blueprint
 from app.main.find import find as find_blueprint
 from app.main.list import lst as list_blueprint
+from app.init import init as init_blueprint
 from config import config
 
 bootstrap = Bootstrap()
@@ -37,6 +38,7 @@ def create_app(config_name):
     app.register_blueprint(list_blueprint, url_prefix='/main/list')
     app.register_blueprint(find_blueprint, url_prefix='/main/find')
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
+    app.register_blueprint(init_blueprint, url_prefix='/init')
     CORS(app)
     app.config['CORS_HEADERS'] = 'Content-Type'
 

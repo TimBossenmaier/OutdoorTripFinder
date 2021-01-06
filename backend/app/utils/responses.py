@@ -104,6 +104,9 @@ class ResponseMessages(Enum):
     FIND_NO_RESULTS = "[find] {}, no results"
     FIND_SUCCESS = "[find] {}, successful"
     FIND_NOT_AUTHORIZED = "[find] no permission"
+    INIT_NOT_AUTHORIZED = "[init] no permission"
+    INIT_SUCCESS = '[init] successful'
+    INIT_ERROR_DURING_CREATE = '[init] error during create'
 
     def __str__(self):
         return self.value
