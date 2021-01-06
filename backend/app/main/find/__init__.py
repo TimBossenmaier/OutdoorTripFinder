@@ -1,3 +1,6 @@
+import ast
+import base64
+
 from flask import Blueprint
 
 from app.auth import http_auth
@@ -16,9 +19,14 @@ from app.utils.responses import create_response, ResponseMessages
 find = Blueprint('find', __name__)
 
 
-def by_id(user, id, classtype):
+def by_id(user, id, classtype, data_encoded):
     session = Session()
     res = None
+
+    data_string = base64.b64decode(data_encoded).decode()
+    data = ast.literal_eval(data_string)
+
+    output = data.get('output')
 
     if user not in session:
         user = session.query(User).get(user.id)
@@ -28,10 +36,7 @@ def by_id(user, id, classtype):
 
         if entity is not None:
             if classtype == Activity:
-                res = entity.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
-                                                                  str(ActivityAttributes.ID),
-                                                                  str(ActivityAttributes.DESCRIPTION),
-                                                                  str(ActivityAttributes.SOURCE)),
+                res = entity.convert_to_presentation_schema(only=output,
                                                             **{
                                                                 'activity_type': entity.get_activity_type(session, output='name'),
                                                                 'locations': entity.get_location_all(output='name'),
@@ -39,8 +44,7 @@ def by_id(user, id, classtype):
                                                                 'countries': entity.get_country_all(output='abbreviation')
                                                             })
             else:
-                res = entity.convert_to_presentation_schema(only=(str(ActivityAttributes.NAME),
-                                                                  str(ActivityAttributes.ID)))
+                res = entity.convert_to_presentation_schema(only=output)
             session.expunge_all()
             session.close()
             return create_response(res, responses.SUCCESS_200, ResponseMessages.LIST_SUCCESS, classtype.__name__, 200)
@@ -51,48 +55,48 @@ def by_id(user, id, classtype):
                                    classtype.__name__, 200)
 
 
-@find.route('/country/<identifier>', methods=['GET'])
+@find.route('/country/<identifier>/<data>', methods=['GET'])
 @http_auth.login_required()
-def country_by_id(identifier):
-    res = by_id(user=http_auth.current_user, id=identifier, classtype=Country)
+def country_by_id(identifier, data):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=Country, data_encoded=data)
 
     return res
 
 
-@find.route('/region/<identifier>', methods=['GET'])
+@find.route('/region/<identifier>/<data>', methods=['GET'])
 @http_auth.login_required()
-def region_by_id(identifier):
-    res = by_id(user=http_auth.current_user, id=identifier, classtype=Region)
+def region_by_id(identifier, data):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=Region, data_encoded=data)
 
     return res
 
 
-@find.route('/location_type/<identifier>', methods=['GET'])
+@find.route('/location_type/<identifier>/<data>', methods=['GET'])
 @http_auth.login_required()
-def location_type_by_id(identifier):
-    res = by_id(user=http_auth.current_user, id=identifier, classtype=LocationType)
+def location_type_by_id(identifier, data):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=LocationType, data_encoded=data)
 
     return res
 
 
-@find.route('/activity_type/<identifier>', methods=['GET'])
+@find.route('/activity_type/<identifier>/<data>', methods=['GET'])
 @http_auth.login_required()
-def activity_type_by_id(identifier):
-    res = by_id(user=http_auth.current_user, id=identifier, classtype=ActivityType)
+def activity_type_by_id(identifier, data):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=ActivityType, data_encoded=data)
 
     return res
 
 
-@find.route('/location/<identifier>', methods=['GET'])
+@find.route('/location/<identifier>/<data>', methods=['GET'])
 @http_auth.login_required()
-def location_by_id(identifier):
-    res = by_id(user=http_auth.current_user, id=identifier, classtype=Location)
+def location_by_id(identifier, data):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=Location, data_encoded=data)
 
     return res
 
 
-@find.route('/activity/<identifier>', methods=['GET'])
+@find.route('/activity/<identifier>/<data>', methods=['GET'])
 @http_auth.login_required()
-def activity_by_id(identifier):
-    res = by_id(user=http_auth.current_user, id=identifier, classtype=Activity)
+def activity_by_id(identifier, data):
+    res = by_id(user=http_auth.current_user, id=identifier, classtype=Activity, data_encoded=data)
     return res
