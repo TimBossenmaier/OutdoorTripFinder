@@ -23,8 +23,15 @@ export class TourDbService {
   getAllTours(search: any): Observable<Tour[]> {
 
     if (search.lat) {
+
+      const jsonEncoded = btoa(JSON.stringify( {
+        only: ['name', 'id'],
+        lat: search.lat,
+        long: search.long,
+        dist: search.dist
+      }));
       return this.http.get<TourRaw[]>(
-        `${this.apiURL}/main/find_tour?lat=${search.lat}&long=${search.long}&dist=${search.dist}`)
+        `${this.apiURL}/main/find_tour/${jsonEncoded}`)
         .pipe(
           retry(3),
           map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t)),
@@ -62,7 +69,11 @@ export class TourDbService {
             column: 'name',
             dir: 'asc'
           },
-          output: ['id', 'name']
+          output: ['id', 'name'],
+          enrich: {
+            get_location: 'name',
+            get_region: 'name'
+          }
         }));
 
         return this.http.get<TourRaw[]>(
@@ -85,7 +96,11 @@ export class TourDbService {
           column: 'name',
           dir: 'asc'
         },
-        output: ['id', 'name']
+        output: ['id', 'name'],
+        enrich: {
+          get_location: 'name',
+          get_region: 'name'
+        }
       }));
 
       return this.http.get<TourRaw[]>(
@@ -103,7 +118,13 @@ export class TourDbService {
 
     const jsonEncoded = btoa(JSON.stringify(
       {
-        output : ['name', 'id', 'description', 'source']
+        output : ['name', 'id', 'description', 'source'],
+        enrich: {
+          get_activity_type: 'name',
+          get_country_all: 'abbreviation',
+          get_location_all: 'name',
+          get_location_type_all: 'id'
+        }
       }
     ));
     return this.http.get<TourRaw>(
@@ -116,8 +137,19 @@ export class TourDbService {
   }
 
   getTourByTerm(searchTerm: string): Observable<Tour[]> {
+
+    const jsonEncoded = btoa(JSON.stringify({
+      term: searchTerm,
+      output: ['name', 'id'],
+      enrich: {
+        get_location: 'name',
+        get_region: 'name',
+        get_country: 'abbreviation'
+      }
+    }));
+
     return this.http.get<TourRaw[]>(
-      `${this.apiURL}/main/find_tour_by_term/${searchTerm}`)
+      `${this.apiURL}/main/find_tour_by_term/${jsonEncoded}`)
       .pipe(
         retry(3),
         map(toursRaw => toursRaw.map(t => TourFactory.fromRaw(t))),
