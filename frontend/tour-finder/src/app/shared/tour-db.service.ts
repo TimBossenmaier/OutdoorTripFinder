@@ -100,8 +100,14 @@ export class TourDbService {
   }
 
   getTourByID(id: string): Observable<Tour> {
+
+    const jsonEncoded = btoa(JSON.stringify(
+      {
+        output : ['name', 'id', 'description', 'source']
+      }
+    ));
     return this.http.get<TourRaw>(
-      `${this.apiURL}/main/find/activity/${id}`)
+      `${this.apiURL}/main/find/activity/${id}/${jsonEncoded}`)
       .pipe(
         retry(3),
         map(t => TourFactory.fromRaw(t)),
