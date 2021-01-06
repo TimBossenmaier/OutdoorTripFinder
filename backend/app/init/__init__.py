@@ -38,7 +38,7 @@ def import_tours(data_encoded):
     last_index = {}
     for c in classes:
         res = session.query(c).order_by(c.id.desc()).first()
-        last_index.update({c.__name__: res.id})
+        last_index.update({c.__name__: res.id if res is not None else 0})
 
     if user not in session:
         user = session.query(User).get(user.id)

@@ -7,7 +7,7 @@
     <a class="result"
        *ngFor="let tour of foundTours" [routerLink]="['..', 'tours', tour.id]">
         {{tour.name}}
-        <p class="description">{{tour.location}}, {{tour.region}} ({{tour.country_short}})</p>
+        <p class="description">{{tour.location}}, {{tour.region}} ({{tour.country}})</p>
     </a>
   </div>
 </div>
