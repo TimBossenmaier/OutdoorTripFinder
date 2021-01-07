@@ -1,5 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
+import {LOCALE_ID, NgModule} from '@angular/core';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -15,6 +15,8 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {TokenInterceptor} from './shared/token.interceptor';
 import {TestGoogleComponent} from './test-google/test-google.component';
+import {registerLocaleData} from '@angular/common';
+import localeDe from '@angular/common/locales/de';
 
 @NgModule({
   declarations: [
@@ -40,9 +42,15 @@ import {TestGoogleComponent} from './test-google/test-google.component';
     {
       provide: HTTP_INTERCEPTORS,
       useClass: TokenInterceptor,
-      multi: true
-    }
+      multi: true,
+
+    },
+    { provide: LOCALE_ID, useValue: 'de'}
   ],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+  constructor() {
+    registerLocaleData(localeDe);
+  }
+}

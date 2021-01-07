@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Tour } from '../shared/tour';
 import { TourDbService } from '../shared/tour-db.service';
 import {ActivatedRoute} from '@angular/router';
+import {Observable} from 'rxjs';
 
 @Component({
   selector: 'tf-tour-list',
@@ -9,7 +10,7 @@ import {ActivatedRoute} from '@angular/router';
   styleUrls: ['./tour-list.component.css']
 })
 export class TourListComponent implements OnInit {
-  tours: Tour[];
+  tours$: Observable<Tour[]>;
 
   constructor(private tdb: TourDbService,
               private route: ActivatedRoute) { }
@@ -22,13 +23,13 @@ export class TourListComponent implements OnInit {
         lat: params.lat.toString(),
         dist: params.dist.toString()
       };
-      this.tdb.getAllTours(search).subscribe(res => this.tours = res);
+      this. tours$ = this.tdb.getAllTours(search);
     } else if (params.country) {
-      this.tdb.getAllTours({country: params.country}).subscribe(res => this.tours = res);
+      this.tours$ = this.tdb.getAllTours({country: params.country});
     } else if (params.region) {
-      this.tdb.getAllTours({region: params.region}).subscribe(res => this.tours = res);
+      this.tours$ = this.tdb.getAllTours({region: params.region});
     } else {
-      this.tdb.getAllTours({country: '-1'}).subscribe(res => this.tours = res);
+      this.tours$ = this.tdb.getAllTours({country: '-1'});
     }
   }
 

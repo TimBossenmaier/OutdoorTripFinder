@@ -4,6 +4,7 @@ import { TourDbService } from '../shared/tour-db.service';
 import {Tour } from '../shared/tour';
 import {Comment} from '../shared/comment';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {Observable} from 'rxjs';
 
 @Component({
   selector: 'tf-tour-details',
@@ -11,7 +12,7 @@ import {FormBuilder, FormGroup, Validators} from '@angular/forms';
   styleUrls: ['./tour-details.component.css']
 })
 export class TourDetailsComponent implements OnInit {
-tour: Tour;
+tour$: Observable<Tour>;
 comments: Comment[];
 commentForm: FormGroup;
 blob: Blob;
@@ -27,7 +28,7 @@ userHiked: boolean;
 
   ngOnInit(): void {
     const params = this.route.snapshot.paramMap;
-    this.tdb.getTourByID(params.get('id').toString()).subscribe(t => this.tour = t);
+    this.tour$ = this.tdb.getTourByID(params.get('id').toString());
     this.tdb.getCommentByAct(params.get('id').toString()).subscribe(c => this.comments = c);
     this.tdb.getHikes(params.get('id').toString()).subscribe(h => this.hikes = h);
     this.tdb.hike(params.get('id').toString(), 'check').subscribe(h => this.userHiked = h);
@@ -58,7 +59,7 @@ userHiked: boolean;
                             const downloadURL = window.URL.createObjectURL(data);
                             const link = document.createElement('a');
                             link.href = downloadURL;
-                            link.download = this.tour.name.concat(this.fileType);
+                            link.download = $('#tourName').text().trim().concat(this.fileType);
                             link.click();
       });
   }

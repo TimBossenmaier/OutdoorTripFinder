@@ -1,5 +1,5 @@
-<div *ngIf="tour; else loading">
-  <h1 class="ui dividing header">
+<ng-container *ngIf="tour$ | async as tour; else loading">
+  <h1 class="ui dividing header" id="tourName">
     {{tour.name}}
   </h1>
   <div class="ui grid centered">
@@ -45,7 +45,7 @@
               <div class="content">
                 <a class="author">{{c.author}}</a>
                 <div class="metadata">
-                  <span class="date">{{c.updated_at}}</span>
+                  <span class="date">{{c.updated_at | date:'short'}}</span>
                 </div>
                 <div class="text" >
                   {{c.body}}
@@ -95,7 +95,7 @@
       </div>
     </div>
   </div>
-</div>
+</ng-container>
 
 <ng-template #loading>
   <div class="ui active centered inline loader"></div>
