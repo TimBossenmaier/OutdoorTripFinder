@@ -1,3 +1,5 @@
+import ast
+import base64
 import datetime
 import os
 
@@ -87,20 +89,30 @@ def auth_error():
     return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.AUTH_INVALID_PARAMS, User.__name__, 403)
 
 
-@auth.route('/tokens/', methods=['POST'])
+@auth.route('/tokens/<data_encoded>', methods=['GET'])
 @http_auth.login_required
-def get_token():
+def get_token(data_encoded):
     session = Session()
+    user = http_auth.current_user
+
+    data_string = base64.b64decode(data_encoded).decode()
+    data = ast.literal_eval(data_string)
+
+    if user not in session:
+        user = session.query(User).get(user.id)
+
     if http_auth.current_user is None or http_auth.token_used:
         return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.AUTH_INVALID_PARAMS,
                                User.__name__, 403)
-    return create_response({'token': http_auth.current_user.generate_auth_token(expiration=3600,
-                                                                                session=session),
-                            'expiration_ts': datetime.datetime.now() + datetime.timedelta(hours=1)},
-                           responses.SUCCESS_200, ResponseMessages.AUTH_LOGIN_SUCCESSFUL, 200)
+    token = {'token': user.generate_auth_token(expiration=1200,
+                                               session=session),
+             'expiration_ts': (datetime.datetime.now() + datetime.timedelta(minutes=20)).isoformat()}
+
+    return create_response(user.serialize(only=data.get("ouput"), **token),
+                           responses.SUCCESS_200, ResponseMessages.AUTH_LOGIN_SUCCESSFUL, None, 200)
 
 
-@auth.route('/create_user', methods=['GET', 'POST'])
+@auth.route('/create_user', methods=['POST'])
 def create_user():
     data = request.get_json()
 
@@ -291,3 +303,30 @@ def change_email(token):
         session.close()
         return create_response(user, responses.BAD_REQUEST_400, ResponseMessages.AUTH_EMAIL_CHANGED,
                                User.__name__, 400)
+
+
+@auth.route('user/<data_encoded>')
+@http_auth.login_required
+def get_user(data_encoded):
+    user = http_auth.current_user
+
+    data_string = base64.b64decode(data_encoded).decode()
+    data = ast.literal_eval(data_string)
+
+    session = Session()
+
+    # TODO: not approved or confirmed
+
+    if user is not None:
+
+        if user not in session:
+            user = session.query(User).get(user.id)
+
+        token = {'token': user.generate_auth_token(expiration=1200,
+                                                   session=session),
+                 'expiration_ts': (datetime.datetime.now() + datetime.timedelta(minutes=20)).isoformat()}
+
+        return create_response(user.serialize(only=data.get("ouput"), **token), responses.SUCCESS_200,
+                               ResponseMessages.AUTH_LOGIN_SUCCESSFUL, User, 200)
+    else:
+        return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.AUTH_LOGIN_FAILED, User, 403)

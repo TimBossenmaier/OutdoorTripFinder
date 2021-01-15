@@ -43,7 +43,7 @@ class Entity:
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
 
-    def serialize(self, session=None, only=('id'), enrich={}, **kwargs):
+    def serialize(self, session=None, only=['id'], enrich={}, **kwargs):
         act = self.__class__.get_schema(many=False, only=only).dump(self)
 
         for k, v in enrich.items():

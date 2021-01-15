@@ -27,7 +27,7 @@ class User(Entity, Base):
     hiked = relationship(HikeRelation, foreign_keys=[HikeRelation.user_id], lazy='dynamic')
     comments = relationship(Comment, foreign_keys=[Comment.author_id], lazy='dynamic', backref='author')
 
-    def __init__(self, username, email, password, created_by, role_id=1):
+    def __init__(self, username, email, password, created_by='', role_id=1):
         Entity.__init__(self)
         self.username = username
         self.email = email
@@ -60,7 +60,6 @@ class User(Entity, Base):
 
     def update_password(self, password, session, updated_by):
         self.password_hash = generate_password_hash(password)
-        self.username = rand_alphanumeric
         self.update(session, updated_by=updated_by)
 
     def verify_password(self, password):
@@ -150,7 +149,7 @@ class User(Entity, Base):
 
     def generate_auth_token(self, expiration, session):
         self.session_id = rand_alphanumeric()
-        self.update(session, self.username)
+        self.update(session, self.session_id)
         s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'], expires_in=expiration)
         return s.dumps({'session_id': self.session_id}).decode('utf-8')
 
@@ -194,6 +193,10 @@ class User(Entity, Base):
         except:
             return None
         return session.query(User).filter(User.session_id == data['session_id']).first()
+
+    @staticmethod
+    def get_schema(many, only):
+        return UserSchema(many=many, only=only)
 
 
 class UserInsertSchema(Schema):
