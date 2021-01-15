@@ -1,6 +1,10 @@
-<div class="ui menu">
+<div class="ui menu" *ngIf="user">
   <a routerLink="home" routerLinkActive="active" class="item">Home</a>
   <a routerLink="search" routerLinkActive="active" class="item">Suche</a>
   <a routerLink="tours" routerLinkActive="active" class="item">Touren</a>
+  <a class="item" (click)="logout()">Logout</a>
 </div>
-<router-outlet></router-outlet>
+<div class="app container">
+  <tf-alert></tf-alert>
+  <router-outlet></router-outlet>
+</div>

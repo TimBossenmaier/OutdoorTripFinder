@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import {TourDbService} from '../shared/tour-db.service';
+import {AccountService} from '../shared/account.service';
+import {User} from '../shared/user';
 
 @Component({
   selector: 'tf-home',
@@ -19,7 +21,12 @@ export class HomeComponent implements OnInit {
     popActivity: string
   };
 
-  constructor(private tdb: TourDbService) { }
+  user: User;
+
+  constructor(private tdb: TourDbService,
+              private as: AccountService) {
+    this.user = this.as.userValue;
+  }
 
   ngOnInit(): void {
     this.tdb.getGeneralStats().subscribe(res => this.stats = res);

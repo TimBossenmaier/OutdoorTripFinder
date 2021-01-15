@@ -4,6 +4,10 @@
 <div class="ui huge header">
   Übersicht
 </div>
+<h3 class="ui image header">
+  <i class="comment icon"></i>
+  <div class="content">Hi, {{user.username}}!</div>
+</h3>
 <div class="ui divider"></div>
 <div class="ui large four statistics">
   <div class="statistic">
@@ -93,5 +97,6 @@
   </div>
   <div class="inline">
     <div class="ui button" [routerLink]="'/search'">Touren Entdecken</div>
+    <div class="ui button" [routerLink]="'/users'">Nutzer verwalten</div>
   </div>
 </div>

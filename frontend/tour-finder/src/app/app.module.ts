@@ -13,10 +13,16 @@ import {CommentComponent} from './comment/comment.component';
 import {TourSearchComponent} from './tour-search/tour-search.component';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {TokenInterceptor} from './shared/token.interceptor';
 import {TestGoogleComponent} from './test-google/test-google.component';
 import {registerLocaleData} from '@angular/common';
 import localeDe from '@angular/common/locales/de';
+import { AlertComponent } from './alert/alert.component';
+import { LayoutComponent } from './layout/layout.component';
+import { LoginComponent } from './login/login.component';
+import { RegisterComponent } from './register/register.component';
+import { UserLayoutComponent } from './user-layout/user-layout.component';
+import { UserListComponent } from './user-list/user-list.component';
+import {AuthInterceptor} from './shared/auth.interceptor';
 
 @NgModule({
   declarations: [
@@ -28,7 +34,13 @@ import localeDe from '@angular/common/locales/de';
     SearchComponent,
     CommentComponent,
     TourSearchComponent,
-    TestGoogleComponent
+    TestGoogleComponent,
+    AlertComponent,
+    LayoutComponent,
+    LoginComponent,
+    RegisterComponent,
+    UserLayoutComponent,
+    UserListComponent
   ],
   imports: [
     BrowserModule,
@@ -41,7 +53,7 @@ import localeDe from '@angular/common/locales/de';
   providers: [
     {
       provide: HTTP_INTERCEPTORS,
-      useClass: TokenInterceptor,
+      useClass: AuthInterceptor,
       multi: true,
 
     },

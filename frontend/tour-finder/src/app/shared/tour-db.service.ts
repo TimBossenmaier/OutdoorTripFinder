@@ -9,12 +9,13 @@ import {TourFactory} from './tour-factory';
 import {Comment} from './comment';
 import {ActivityType} from './activity-type';
 import {Location} from './location';
+import {environment} from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TourDbService {
-  private apiURL = 'http://127.0.0.1:5000';
+  private apiURL = environment.apiUrl;
 
   constructor(private http: HttpClient) {
 
