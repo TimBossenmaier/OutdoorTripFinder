@@ -16,11 +16,19 @@ from app.main.error_handling import investigate_integrity_error
 from app.utils import responses
 from app.utils.responses import ResponseMessages, create_response
 
+# create blueprint for all authentication endpoints
 auth = Blueprint('auth', __name__)
 http_auth = HTTPBasicAuth()
 
 
 def process_consent(typ, token):
+    """
+    Processes a confirmation token, both for user confirmation and approval
+    Args:
+        typ: denotes type of action, e.g. confirm
+        token: token that verifies transaction
+
+    """
     s = TimedJSONWebSignatureSerializer(current_app.config['SECRET_KEY'])
 
     try:
@@ -63,10 +71,19 @@ def process_consent(typ, token):
 
 @http_auth.verify_password
 def verify_password(email_or_token, password):
+    """
+    verifies the credentials provided by HTTP Auth, is invoked before endpoint is acessed
+    Args:
+        email_or_token: email address of user or authentication token
+        password: user password (only required in case of login via email)
+
+    Returns:
+        Flask response, consisting of response code, response message, affected class, and http code
+    """
     session = Session()
     if email_or_token == '':
         return False
-    if password == '':
+    if password == '':  # password is not provided when auth token is used
         http_auth.current_user = User.verify_auth_token(email_or_token, session)
         http_auth.token_used = True
         session.expunge_all()
@@ -81,17 +98,31 @@ def verify_password(email_or_token, password):
         return False
     http_auth.current_user = user
     http_auth.token_used = False
-    return user.verify_password(password)
+    return create_response(False, responses.UNAUTHORIZED_403, ResponseMessages.AUTH_INVALID_PARAMS, User.__name__, 403)
 
 
 @http_auth.error_handler
 def auth_error():
+    """
+    is invoked in case any error occurs in HTTP Auth
+    Returns:
+        Flask response, consisting of response code, response message, affected class, and http code
+    """
     return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.AUTH_INVALID_PARAMS, User.__name__, 403)
 
 
 @auth.route('/tokens/<data_encoded>', methods=['GET'])
 @http_auth.login_required
 def get_token(data_encoded):
+    """
+    creates endpoint to retrieve an auth token for an user already authenticated
+    Args:
+        data_encoded: BASE64 encoded JSON
+
+    Returns:
+        Flask response, consisting of encoded user (only containing attributes specified in {output},response code,
+         response message, affected class, and http code
+    """
     session = Session()
     user = http_auth.current_user
 
@@ -114,6 +145,13 @@ def get_token(data_encoded):
 
 @auth.route('/create_user', methods=['POST'])
 def create_user():
+    """
+    Endpoint to create a new user
+    Returns:
+        Flask response, consisting of serialized user,response code, response message, affected class, and http code
+    """
+
+    # TODO: change to base64 encoded JSON
     data = request.get_json()
 
     session = Session()
@@ -144,6 +182,14 @@ def create_user():
 
 @auth.route('/approve/<token>')
 def approve(token):
+    """
+    Endpoint to approve a new user (by admin)
+    Accessible without authentication
+    Args:
+        token: approval token to identify user
+    Returns:
+        response of :func:`~process_consent`
+    """
     resp = process_consent('approve', token)
 
     return resp
@@ -151,6 +197,15 @@ def approve(token):
 
 @auth.route('/confirm/<token>')
 def confirm(token):
+    """
+    Endpoint to confirm a new account (by user himself)
+    Accessible without authentication
+
+    Args:
+        token: approval token to identify user
+    Returns:
+        response of :func:`~process_consent`
+    """
     resp = process_consent('confirm', token)
 
     return resp
@@ -159,6 +214,12 @@ def confirm(token):
 @auth.route('/confirm', methods=['GET', 'POST'])
 @http_auth.login_required
 def resend_confirmation():
+    """
+    Endpoint to resend confirmation E-Mail
+    Returns:
+        Flask response, consisting of serialized user, response code, response message, affected class, and http code
+    """
+    # TODO: change to BASE64 decoded JSON
     data = request.get_json()
     curr_user = http_auth.current_user
     if curr_user is not None:
@@ -182,6 +243,13 @@ def resend_confirmation():
 @auth.route('/change_password', methods=['GET', 'POST'])
 @http_auth.login_required
 def change_password():
+    """
+    Endpoint to change the password
+
+    Returns:
+         Flask response, consisting of serialized user, response code, response message, affected class, and http code
+    """
+    # TODO: change to encoded JSON
     data = request.get_json()
     session = Session()
 
@@ -201,6 +269,12 @@ def change_password():
 
 @auth.route('/reset_cred', methods=['GET', 'POST'])
 def password_reset_request():
+    """
+    Endpoint to reset password, sends out a confirmation mail to authenticate user
+
+    Returns:
+         Flask response, consisting of serialized user, response code, response message, affected class, and http code
+    """
     data = request.get_json()
     session = Session()
 
@@ -229,6 +303,14 @@ def password_reset_request():
 
 @auth.route('reset/<token>', methods=['GET', 'POST'])
 def password_reset(token):
+    """
+    Endpoint to reset the password, after user has requested password reset by :func:`~password_reset_request`
+    Args:
+        token: token to authenticate user, sent out by password reset mail
+
+    Returns:
+        Flask response, consisting of serialized user, response code, response message, affected class, and http code
+    """
     data = request.get_json()
     session = Session()
     if not data.get("password"):
@@ -249,6 +331,11 @@ def password_reset(token):
 @auth.route('/change_email', methods=['GET', 'POST'])
 @http_auth.login_required
 def change_email_request():
+    """
+    Endpoint to change E-Mail, sends out confirmation mail to new endpoint
+    Returns:
+        Flask response, consisting of serialized user, response code, response message, affected class, and http code
+    """
     data = request.get_json()
     session = Session()
 
@@ -276,6 +363,14 @@ def change_email_request():
 
 @auth.route('/change_email/<token>')
 def change_email(token):
+    """
+    Endpoint to finally change email
+    Args:
+        token: token from confirmation mail
+
+    Returns:
+        Flask response, consisting of serialized user, response code, response message, affected class, and http code
+    """
     new_email, username, user_id = User.resolve_email_token(token)
     session = Session()
 
@@ -308,6 +403,14 @@ def change_email(token):
 @auth.route('user/<data_encoded>')
 @http_auth.login_required
 def get_user(data_encoded):
+    """
+    Endpoint returning logged-in user
+    Args:
+        data_encoded: BASE64 encoded JSON
+
+    Returns:
+        Flask response, consisting of serialized user, response code, response message, affected class, and http code
+    """
     user = http_auth.current_user
 
     data_string = base64.b64decode(data_encoded).decode()
