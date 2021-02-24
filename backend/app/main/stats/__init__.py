@@ -75,10 +75,10 @@ def stats_general():
         'noCountry': no_country,
         'noRegion': no_regions,
         'noLocation': no_locations,
-        'popCountry': list(countries.keys())[0],
-        'popRegion': list(regions.keys())[0],
-        'popActivityType': list(act_types.keys())[0],
-        'popActivity': list(activities.keys())[0]
+        'popCountry': list(countries.keys())[0] if len(countries) > 0 else '',
+        'popRegion': list(regions.keys())[0] if len(regions) > 0 else '',
+        'popActivityType': list(act_types.keys())[0] if len(act_types) > 0 else '',
+        'popActivity': list(activities.keys())[0] if len(activities) > 0 else ''
     }
 
     return create_response(result, responses.SUCCESS_200, ResponseMessages.FIND_SUCCESS, None, 200)
