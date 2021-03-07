@@ -59,7 +59,7 @@ def stats_general():
             act_types[r.activity_type.name] += 1
         else:
             act_types.update({r.activity_type.name: 1})
-    act_types = {k: v for k, v in sorted(act_types.items(), key=lambda item: item[1], reverse=True)}
+    act_types = sort_dict(act_types.items())
 
     result = session.query(HikeRelation).join(Activity).all()
     activities = {}

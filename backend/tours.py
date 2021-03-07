@@ -15,10 +15,13 @@ from app.entities.activity import Activity
 from app.entities.activity_type import ActivityType
 from app.entities.hike_relations import HikeRelation
 from app.entities.comment import Comment
+from app.init import init_db
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+init_db()
 
 
 @app.after_request

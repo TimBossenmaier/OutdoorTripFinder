@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, Integer, ForeignKey
 from marshmallow import Schema, fields
 from datetime import datetime
 
-from app.entities.entity import Entity, EntitySchema, Base, Session
+from app.entities.entity import Entity, EntitySchema, Base
 from app.entities.user import User
 
 
@@ -12,7 +12,7 @@ class Country(Entity, Base):
     __tablename__ = 'countries'
 
     name = Column(String, nullable=False, unique=True)
-    abbreviation = Column(String, nullable=False, unique=True)
+    abbreviation = Column(String, nullable=False)
     last_updated_by = Column(Integer, ForeignKey('users.id'), nullable=False)
 
     def __init__(self, name, abbreviation, created_by):
