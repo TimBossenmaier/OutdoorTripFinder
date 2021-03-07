@@ -25,6 +25,17 @@ from app.utils.responses import create_response, ResponseMessages
 init = Blueprint('init', __name__)
 
 
+def init_db():
+
+    session = Session()
+
+    Base.metadata.create_all(engine)
+    Role.insert_roles(session)
+
+    session.expunge_all()
+    session.close()
+
+
 @init.route('/load_tours/<data_encoded>', methods=['GET'])
 @http_auth.login_required
 def import_tours(data_encoded):
@@ -226,14 +237,8 @@ def import_tours(data_encoded):
 
 
 @init.route('/db', methods=['GET'])
-def init_db():
+def init_db_ep():
 
-    session = Session()
-
-    Base.metadata.create_all(engine)
-    Role.insert_roles(session)
-
-    session.expunge_all()
-    session.close()
+    init_db()
 
     return create_response(None, responses.SUCCESS_201, ResponseMessages.INIT_SUCCESS, None, 201)
