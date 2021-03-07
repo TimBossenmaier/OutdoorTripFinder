@@ -3,6 +3,7 @@
     <h2 class="ui image header">
       <div class="content">Log-in mit deinem Benutzer</div>
     </h2>
+    <div class="ui error message" *ngIf="wrongPassword"></div>
     <form class="ui large form" [formGroup]="form" (ngSubmit)="onSubmit()">
       <div class="ui stacked segment">
         <div class="field">
@@ -29,7 +30,6 @@
         </div>
         <button class="ui fluid large submit button" [disabled]="loading">Login</button>
       </div>
-
     </form>
     <div class="ui message">
       Neu hier? <a routerLink="../register">Registrieren</a>

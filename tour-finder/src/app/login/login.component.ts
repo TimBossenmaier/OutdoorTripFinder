@@ -14,6 +14,7 @@ export class LoginComponent implements OnInit {
   form: FormGroup;
   loading = false;
   submitted = false;
+  wrongPassword = false;
 
   constructor(
     private fb: FormBuilder,
@@ -53,7 +54,12 @@ export class LoginComponent implements OnInit {
           this.router.navigateByUrl(returnUrl);
         },
         error: err => {
-          this.als.error(err);
+          if ([403].includes(err.status)){
+            this.als.error('Passwort ist falsch.');
+            this.wrongPassword = true;
+          } else {
+            this.als.error(JSON.stringify(err));
+          }
           this.loading = false;
       }
       });
