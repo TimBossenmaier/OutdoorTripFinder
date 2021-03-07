@@ -159,6 +159,7 @@ def import_tours(data_encoded):
             errors.append(["The following activity_type ids are used but not defined",
                            intersection(ids_activity_types, list(data_activities.activity_id))])
 
+        """
         # check presence of all files, resp. validity of save_paths
         for each_file in data_activities.save_path:
             if os.path.isfile('E:\Outdoor_Activities\\' + each_file):
@@ -166,6 +167,8 @@ def import_tours(data_encoded):
             else:
                 errors.append(['Not found', 'E:\Outdoor_Activities\\' + each_file])
                 errors_found = True
+                
+        """
 
         countries = []
         regions = []

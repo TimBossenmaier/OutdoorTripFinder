@@ -26,6 +26,9 @@ class Config:
     TEST_DATABASE_NAME = os.environ.get('TEST_DATABASE_NAME')
     TEST_DATABASE_HOST = os.environ.get('TEST_DATABASE_HOST')
     PATH_PDF_STORAGE = os.environ.get('PDF_STORAGE')
+    S3_KEY = os.environ.get('S3_KEY')
+    S3_SECRET = os.environ.get('S3_SECRET')
+    S3_BUCKET = os.environ.get('S3_BUCKET')
 
     @staticmethod
     def init_app(app):

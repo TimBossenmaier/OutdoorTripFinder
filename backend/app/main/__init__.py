@@ -1,6 +1,9 @@
 import ast
 import base64
 import os
+from pathlib import Path
+
+import boto3
 import sqlalchemy as sql
 
 from flask import Blueprint, request as rq, send_file
@@ -281,9 +284,20 @@ def get_file(act_id):
 
         activity = session.query(Activity).get(act_id)
 
-        path_to_file = os.path.join(Config.PATH_PDF_STORAGE, activity.save_path)
+        for file in os.listdir(Path(__file__).parent / "./downloads"):
+            os.remove(os.path.join(Path(__file__).parent / "./downloads", file))
 
-        return send_file(path_to_file, as_attachment=True)
+        s3_resource = boto3.resource(
+            's3',
+            aws_access_key_id=Config.S3_KEY,
+            aws_secret_access_key=Config.S3_SECRET
+        )
+
+        _, filename = activity.save_path.split('/')
+        output = f"{Path(__file__).parent / './downloads'}\\{filename}"
+        s3_resource.Bucket(Config.S3_BUCKET).download_file(activity.save_path, output)
+
+        return send_file(output, as_attachment=True)
     else:
         return create_response(None, responses.UNAUTHORIZED_403, ResponseMessages.FIND_NOT_AUTHORIZED, Activity, 403)
 
