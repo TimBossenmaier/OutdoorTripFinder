@@ -1,0 +1,38 @@
+<div class="ui middle aligned center aligned grid">
+  <div class="column">
+    <h2 class="ui image header">
+      <div class="content">Log-in mit deinem Benutzer</div>
+    </h2>
+    <div class="ui error message" *ngIf="wrongPassword"></div>
+    <form class="ui large form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="ui stacked segment">
+        <div class="field">
+          <div class="label">Benutzername / E-Mail</div>
+          <div class="ui left icon input">
+            <i class="user icon"></i>
+            <input type="text" formControlName="username" [ngClass]="{'field error': submitted && f.username.errors}"/>
+            <div *ngIf="submitted && f.username.errors" class="ui error message">
+              <div class="header">Etwas ist schief gelaufen...</div>
+              <p *ngIf="f.username.errors.required">Benutername / E-Mail fehlt</p>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">Passwort</div>
+          <div class="ui left icon input">
+            <i class="lock icon"></i>
+            <input type="password" formControlName="password" [ngClass]="{'field error': submitted && f.password.errors}"/>
+            <div *ngIf="submitted && f.password.errors" class="ui error message">
+              <div class="header">Etwas ist schief gelaufen...</div>
+              <p *ngIf="f.password.errors.required">Passwort fehlt</p>
+            </div>
+          </div>
+        </div>
+        <button class="ui fluid large submit button" [disabled]="loading">Login</button>
+      </div>
+    </form>
+    <div class="ui message">
+      Neu hier? <a routerLink="../register">Registrieren</a>
+    </div>
+  </div>
+</div>

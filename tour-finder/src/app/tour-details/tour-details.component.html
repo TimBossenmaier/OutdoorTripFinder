@@ -1,0 +1,119 @@
+<ng-container *ngIf="tour$ | async as tour; else loading">
+  <h1 class="ui dividing header" id="tourName">
+    {{tour.name}}
+  </h1>
+  <div class="ui grid centered">
+    <div class="ten wide column">
+      <p *ngIf="tour.description"></p>
+      <div class="description">Beschreibung</div>
+      <div class="ui left aligned raised segment">
+        <p *ngIf="!(tour.description === 'NaN'); else noText">{{tour.description}}</p>
+      </div>
+      <div class="ui four column grid">
+        <div class="column">
+          <h3>{{tour.activityType}}</h3>
+        </div>
+        <div class="column center aligned">
+          <h2>{{tour.source}}</h2>
+        </div>
+        <div class="column center aligned">
+          <button class="ui button" (click)="download()">Download Touren-Info</button>
+        </div>
+        <div class="column center aligned">
+          <div class="label">
+            Wanderungen
+          </div>
+          <div class="ui labeled button" tabindex="0">
+            <div class="ui button" (click)="addHike()" *ngIf="!userHiked" data-tooltip="Füge diese Tour zu Deinen Erlebnissen hinzu" id="remHikeButton">
+              <img src="assets/icon_hike_boot.svg" class="ui image" width="15">
+            </div>
+            <div class="ui button" (click)="removeHike()" *ngIf="userHiked" data-tooltip="Entferne diese Tour aus Deinen Erlebnissen" id="hikeButton">
+              <img src="assets/icon_hike_boot.svg" class="ui image" width="15">
+            </div>
+            <div class="ui basic label">{{hikes}}</div>
+          </div>
+        </div>
+      </div>
+      <div class="one wide column center aligned">
+        <div class="ui comments">
+          <h3 class="ui dividing header">Kommentare</h3>
+          <div *ngIf="comments?.length > 0; else noComments">
+            <div class="comment" *ngFor="let c of comments">
+              <a class="avatar">
+                <img src="assets/icon_avatar.svg">
+              </a>
+              <div class="content">
+                <a class="author">{{c.author}}</a>
+                <div class="metadata">
+                  <span class="date">{{c.updated_at | date:'short'}}</span>
+                </div>
+                <div class="text" >
+                  {{c.body}}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <form class="ui reply form" [formGroup]="commentForm" (ngSubmit)="submitForm()">
+          <div class="field">
+            <textarea formControlName="body" rows="3"></textarea>
+          </div>
+          <div class="field">
+            <button class="ui basic button" type="submit" [disabled]="commentForm.invalid">
+              <i class="icon edit"></i>
+              Kommentar abschicken
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="six wide column">
+      <div class="ui segment">
+        <h3>Orte</h3>
+        <div class="ui relaxed divided list">
+          <div class="item" *ngFor="let l of tour.locations; let i = index">
+            <div class="ui grid">
+              <div class="two wide column center" >
+                <i [ngSwitch]="tour.location_types[i]">
+                  <img src="assets/icon_village.svg" *ngSwitchCase="1" class="ui image" width="30">
+                  <img src="assets/icon_mountain.svg" *ngSwitchCase="2" class="ui image" width="30">
+                  <img src="assets/icon_sight.svg" *ngSwitchCase="3" class="ui image" width="30">
+                  <img src="assets/icon_hostel.svg" *ngSwitchCase="4" class="ui image" width="30">
+                  <img src="assets/icon_hut.svg" *ngSwitchCase="5" class="ui image" width="30">
+                  <img src="assets/icon_parking.svg" *ngSwitchCase="6" class="ui image" width="30">
+                  <i *ngSwitchDefault class="help icon"></i>
+                </i>
+              </div>
+              <div class="eight wide column" >
+                {{l}}
+                <br>
+                <i class="{{tour.countries[i].toLowerCase()}} flag"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #loading>
+  <div class="ui active centered inline loader"></div>
+</ng-template>
+
+<ng-template #noText>
+  <h3> </h3>
+</ng-template>
+
+<ng-template #noComments>
+  <div class="ui placeholder segment">
+    <div class="ui icon header">
+      Es sind noch keine Kommentare zu dieser Tour vorhanden
+      <br>
+      <img src="assets/icon_conversation.svg" class="ui image" width="100">
+    </div>
+    <div class="inline">
+      Am besten gleich loslegen!
+    </div>
+  </div>
+</ng-template>
