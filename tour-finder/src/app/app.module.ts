@@ -13,7 +13,7 @@ import {CommentComponent} from './comment/comment.component';
 import {TourSearchComponent} from './tour-search/tour-search.component';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {TestGoogleComponent} from './test-google/test-google.component';
+import {GoogleLocationSearchComponent} from './google-location-search/google-location-search.component';
 import {registerLocaleData} from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import { AlertComponent } from './alert/alert.component';
@@ -34,7 +34,7 @@ import {AuthInterceptor} from './shared/auth.interceptor';
     SearchComponent,
     CommentComponent,
     TourSearchComponent,
-    TestGoogleComponent,
+    GoogleLocationSearchComponent,
     AlertComponent,
     LayoutComponent,
     LoginComponent,
