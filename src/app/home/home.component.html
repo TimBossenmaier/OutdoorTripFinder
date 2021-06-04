@@ -1,0 +1,102 @@
+<div *ngIf="!stats" class="ui active dimmer">
+  <div class="ui large text loader">Touren werden gerade gesichtet...</div>
+</div>
+<div class="ui huge header">
+  Übersicht
+</div>
+<h3 class="ui image header">
+  <i class="comment icon"></i>
+  <div class="content">Hi, {{user.username}}!</div>
+</h3>
+<div class="ui divider"></div>
+<div class="ui large four statistics">
+  <div class="statistic">
+    <div class="value">
+      {{stats.noTours}}
+    </div>
+    <div class="label">
+      Touren
+    </div>
+  </div>
+  <div class="statistic">
+    <div class="value">
+      {{stats.noCountry}}
+    </div>
+    <div class="label">
+      Länder
+    </div>
+  </div>
+  <div class="statistic">
+    <div class="value">
+      {{stats.noRegion}}
+    </div>
+    <div class="label">
+      Regionen
+    </div>
+  </div>
+  <div class="statistic">
+    <div class="value">
+      {{stats.noLocation}}
+    </div>
+    <div class="label">
+      Orte
+    </div>
+  </div>
+</div>
+<p></p>
+<p></p>
+<br>
+<p></p>
+<div class="ui three small statistics">
+  <div class="statistic">
+    <div class="value">
+      <img [src]="'assets/flag/'.concat(stats.popCountry.toLowerCase(), '.svg')" width="300" class="ui inline image">
+    </div>
+    <div class="label">
+      Häufigstes Land
+    </div>
+  </div>
+  <div class="statistic">
+    <div class="value">
+      {{stats.popRegion}}
+    </div>
+    <div class="label">
+      Häufigste Region
+    </div>
+  </div>
+  <div class="statistic">
+    <div class="value">
+      <img [src]="'assets/activity/'.concat(stats.popActivityType.toLowerCase(), '.svg')" class="ui circular inline image">
+      {{stats.popActivityType}}
+    </div>
+    <div class="label">
+      Häufigste Touren-Art
+    </div>
+  </div>
+</div>
+<p></p>
+<p></p>
+<br>
+<div class="ui small statistics">
+  <div class="statistic">
+    <div class="value">
+      {{stats.popActivity}}
+    </div>
+    <div class="label">
+      Häufigste gemachte Tour
+    </div>
+  </div>
+</div>
+<p></p>
+<p></p>
+<br>
+<div class="ui placeholder segment">
+  <div class="ui icon header">
+    <i class="search icon"></i>
+    Lust direkt loszulegen?
+  </div>
+  <div class="inline">
+    <div class="ui button" [routerLink]="'/search'">Touren Entdecken</div>
+    <div class="ui button" [routerLink]="'/users'">Nutzer verwalten</div>
+  </div>
+</div>

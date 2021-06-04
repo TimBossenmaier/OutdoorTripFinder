@@ -1,0 +1,22 @@
+<h1 class="ui center aligned icon header">
+  <i class="circular users icon"></i>
+  Benutzer
+</h1>
+<table class="ui compact celled definition table">
+  <thead>
+  <tr>
+    <th></th>
+    <th>Benutzername</th>
+    <th>E-Mail Adresse</th>
+    <th>Rolle</th>
+  </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let user of users; let i = index">
+      <td>{{i}}</td>
+      <td>{{user.username}}</td>
+      <td>{{user.email}}</td>
+      <td>{{user.role_id}}</td>
+    </tr>
+  </tbody>
+</table>

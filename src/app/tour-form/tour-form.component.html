@@ -1,0 +1,57 @@
+<form class="ui form" [formGroup]="tourForm" (ngSubmit)="submitForm()">
+  <div class="field">
+    <label>Name der Tour</label>
+    <input type="text" formControlName="name" placeholder="Karlsruher Grat">
+    <tf-form-messages [control]="tourForm.get('name')" controlName="name"></tf-form-messages>
+  </div>
+  <br>
+  <div class="field">
+    <label>Kurz-Beschreibung der Tour</label>
+    <textarea formControlName="description" placeholder="Abwechslungsreiche Rundwanderung...">5</textarea>
+  </div>
+  <br>
+  <div class="field">
+    <label>Art der Tour</label>
+    <mat-form-field>
+      <input type="text" aria-label="Number" matInput formControlName="activityType" [matAutocomplete]="auto">
+      <mat-autocomplete #auto="matAutocomplete">
+        <mat-option *ngFor="let a of activityTypes" [value]="a.name">{{a.name}}</mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+    <tf-form-messages [control]="tourForm.get('activityType')" controlName="activityType"></tf-form-messages>
+  </div>
+  <br>
+  <div class="field">
+    <label>Quelle des Infomaterials</label>
+    <input type="text" formControlName="source" placeholder="Outdoor 03 2020">
+    <tf-form-messages [control]="tourForm.get('source')" controlName="source"></tf-form-messages>
+  </div>
+  <br>
+  <div class="field">
+    <label>Speicherpfad des Infomaterials</label>
+    <input type="text" formControlName="savePath" placeholder="Europa\Deutschland\Karlsruher_Grat.pdf">
+    <tf-form-messages [control]="tourForm.get('savePath')" controlName="savePath"></tf-form-messages>
+  </div>
+  <br>
+  <div class="field">
+    <label>Länge der Tour</label>
+    <input type="text" formControlName="multiDay" placeholder="false">
+    <tf-form-messages [control]="tourForm.get('multiDay')" controlName="multiDay"></tf-form-messages>
+  </div>
+  <br>
+  <div class="field">
+    <label>Orte</label>
+    <button type="button" class="ui mini button" (click)="addLocationControl()"> + Ort</button>
+    <div class="fields" formArrayName="locations" *ngFor="let c of locations.controls; index as i" >
+      <mat-form-field>
+        <input type="text" aria-label="Number" matInput [formControlName]="i" [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete">
+          <mat-option *ngFor="let l of locs" [value]="l.name">{{l.name}}</mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+    <tf-form-messages [control]="tourForm.get('locations')" controlName="locations"></tf-form-messages>
+  </div>
+  <button class="ui button" type="submit" [disabled]="tourForm.invalid">Speichern</button>
+</form>
+

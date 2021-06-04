@@ -1,0 +1,51 @@
+<div class="ui middle aligned center aligned grid">
+  <div class="column">
+    <h2 class="ui image header">
+      <div class="content">Neuen Benutzer anlegen</div>
+    </h2>
+    <form class="ui large form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="ui stacked segment">
+        <div class="field">
+          <div class="label">E-Mail</div>
+          <div class="ui left icon input">
+            <i class="mail icon"></i>
+            <input type="text" formControlName="email" [ngClass]="{'field error': submitted && f.email.errors}" />
+            <div *ngIf="submitted && f.email.errors" class="ui error message">
+              <div class="header">Etwas ist schief gelaufen...</div>
+              <p *ngIf="f.email.errors.required">E-Mail Adresse fehlt</p>
+              <p *ngIf="f.email.errors.email">Keine gültige E-Mail Adresse angegeben</p>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">Benutzername</div>
+          <div class="ui left icon input">
+            <i class="user icon"></i>
+            <input type="text" formControlName="username" [ngClass]="{'field error': submitted && f.username.errors}" />
+            <div *ngIf="submitted && f.username.errors" class="ui error message">
+              <div class="header">Etwas ist schief gelaufen...</div>
+              <p *ngIf="f.username.errors.required">Benutzername fehlt</p>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="label">Passwort</div>
+          <div class="ui left icon input">
+            <i class="lock icon"></i>
+            <input type="password" formControlName="password" [ngClass]="{'field error': submitted && f.password.errors}" />
+            <div *ngIf="submitted && f.password.errors" class="ui error message">
+              <div class="header">Etwas ist schief gelaufen...</div>
+              <p *ngIf="f.password.errors.required">Passwort fehlt</p>
+              <p *ngIf="f.password.errors.minlength">Passwort muss mindestens sechs Zeichen lang sein</p>
+            </div>
+          </div>
+        </div>
+        <button routerLink="../login" class="ui left labeled icon button">
+          <i class="trash icon"></i>
+          Abbrechen
+        </button>
+        <button class="ui fluid large submit button" [disabled]="loading">Registrieren</button>
+      </div>
+    </form>
+  </div>
+</div>
