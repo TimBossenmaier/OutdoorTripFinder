@@ -23,7 +23,6 @@
     "@angular/router": "~9.1.9",
     "@types/googlemaps": "^3.43.0",
     "@types/semantic-ui": "^2.2.7",
-    "fomantic-ui": "^2.8.7",
     "jquery": "^3.5.1",
     "rxjs": "~6.5.4",
     "tslib": "^1.10.0",
