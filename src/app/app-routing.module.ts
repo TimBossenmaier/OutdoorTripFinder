@@ -4,7 +4,6 @@ import {HomeComponent} from './home/home.component';
 import {TourListComponent} from './tour-list/tour-list.component';
 import {TourDetailsComponent} from './tour-details/tour-details.component';
 import {TourSearchComponent} from './tour-search/tour-search.component';
-import {LayoutComponent} from './layout/layout.component';
 import {LoginComponent} from './login/login.component';
 import {RegisterComponent} from './register/register.component';
 import {UserLayoutComponent} from './user-layout/user-layout.component';
